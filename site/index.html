@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fieldstatic — Electrostatic Tick Defense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#F3EFE5;
+    --paper-2:#EAE3D3;
+    --ink:#16150F;
+    --ink-soft:#4a473c;
+    --cobalt:#1E22C4;
+    --lime:#C9F03B;
+    --lime-hi:#DBFF4D;
+    --maxw:1200px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .disp{font-family:"Archivo Expanded","Archivo",sans-serif;}
+  .grot{font-family:"Archivo",sans-serif;}
+  .mono{font-family:"Space Mono",monospace;}
+  a{color:inherit;}
+  img{display:block;}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px;}
+
+  /* ---------- atoms ---------- */
+  .chip{display:inline-flex;align-items:center;gap:8px;background:var(--lime);color:var(--ink);
+    font-family:"Space Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    padding:7px 13px;clip-path:polygon(0 0,100% 0,100% 100%,11px 100%,0 calc(100% - 11px));}
+  .eyebrow{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--cobalt);}
+  .btn{display:inline-flex;align-items:center;gap:10px;cursor:pointer;border:none;white-space:nowrap;
+    font-family:"Archivo",sans-serif;font-weight:700;font-size:15px;letter-spacing:.01em;border-radius:999px;padding:15px 28px;transition:transform .14s ease, background .18s ease;}
+  .btn:active{transform:translateY(1px);}
+  .btn-ink{background:var(--ink);color:var(--paper);}
+  .btn-ink:hover{background:var(--cobalt);}
+  .btn-lime{background:var(--lime);color:var(--ink);border:1.5px solid var(--ink);font-weight:800;}
+  .btn-lime:hover{background:var(--lime-hi);}
+  .pill{font-family:"Space Mono",monospace;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    background:var(--lime);color:var(--ink);border:1.5px solid var(--ink);border-radius:999px;padding:9px 19px;cursor:pointer;transition:background .18s;}
+  .pill:hover{background:var(--lime-hi);}
+
+  /* ---------- nav ---------- */
+  header.nav{position:sticky;top:0;z-index:60;transition:background .25s, box-shadow .25s;}
+  header.nav.scrolled{background:rgba(243,239,229,.86);backdrop-filter:blur(8px);box-shadow:0 1px 0 rgba(22,21,15,.14);}
+  .navrow{display:flex;align-items:center;justify-content:space-between;padding:18px 0;}
+  .wm{font-family:"Archivo",sans-serif;font-weight:800;font-size:22px;letter-spacing:.16em;display:flex;align-items:center;gap:2px;}
+  .wm sup{font-size:9px;font-weight:600;top:-1em;}
+  .wm .a{color:var(--cobalt);}
+  .navlinks{display:flex;align-items:center;gap:28px;}
+  .navlinks a{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;opacity:.78;transition:opacity .15s;}
+  .navlinks a:hover{opacity:1;}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;overflow:hidden;}
+  .hero-grid{display:grid;grid-template-columns:1.12fr .88fr;align-items:center;gap:24px;min-height:78vh;padding:24px 0 56px;}
+  .hero h1{margin:18px 0 0;font-weight:800;font-size:clamp(44px,6.6vw,84px);line-height:.92;letter-spacing:-.02em;}
+  .hero p.lede{max-width:440px;font-size:17px;line-height:1.55;color:var(--ink-soft);margin:22px 0 30px;}
+  .hero .cta-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+  .hero .scrolllink{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;border-bottom:1.5px solid var(--ink);padding-bottom:2px;}
+
+  .stage{position:relative;height:100%;min-height:520px;display:flex;align-items:center;justify-content:center;}
+  .stage .glow{position:absolute;inset:0;background:radial-gradient(closest-side at 52% 46%, rgba(30,34,196,.10), transparent 70%);}
+  .bottle{position:relative;z-index:3;height:min(70vh,640px);filter:drop-shadow(0 26px 34px rgba(22,21,15,.22));animation:bob 6s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
+
+  .field{position:absolute;inset:0;z-index:2;pointer-events:none;}
+  .ring{position:absolute;left:51%;top:46%;border:1.5px dashed var(--cobalt);border-radius:50%;transform:translate(-50%,-50%) scale(.42);opacity:0;}
+  @keyframes ringpulse{0%{transform:translate(-50%,-50%) scale(.42);opacity:0;}16%{opacity:.5;}100%{transform:translate(-50%,-50%) scale(1.18);opacity:0;}}
+  .charge{position:absolute;font-family:"Space Mono",monospace;font-weight:700;color:var(--cobalt);z-index:2;}
+  @keyframes floaty{0%,100%{transform:translateY(0);opacity:.45;}50%{transform:translateY(-10px);opacity:1;}}
+
+  /* ---------- marquee ---------- */
+  .marquee{background:var(--lime);border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);overflow:hidden;}
+  .mtrack{display:flex;white-space:nowrap;width:max-content;animation:scrollx 26s linear infinite;}
+  .mtrack span{font-family:"Space Mono",monospace;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;padding:11px 0;}
+  .mtrack span i{font-style:normal;opacity:.45;padding:0 22px;}
+  @keyframes scrollx{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+
+  /* ---------- section frame ---------- */
+  section{position:relative;}
+  .sec-pad{padding:96px 0;}
+  .lead-h{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:700;letter-spacing:-.015em;line-height:1.0;}
+  .sec-num{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--cobalt);margin-bottom:18px;}
+
+  /* science */
+  .sci-head{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:end;}
+  .sci-head h2{margin:0;font-size:clamp(32px,4.2vw,52px);}
+  .sci-head p{margin:0;font-size:16.5px;line-height:1.6;color:var(--ink-soft);}
+  .sci-head p .src{color:var(--ink);border-bottom:1.5px solid var(--lime);box-shadow:inset 0 -8px 0 var(--lime);}
+
+  .figure{margin:76px 0 0;}
+  .figure img{display:block;width:100%;height:auto;}
+
+  /* science — the difference */
+  .diff{display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:start;margin-top:60px;padding-top:44px;border-top:1.5px solid var(--ink);}
+  .diff-h{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:700;font-size:clamp(27px,3.4vw,42px);line-height:1.04;letter-spacing:-.015em;margin:0;}
+  .diff-h em{font-style:normal;color:var(--cobalt);}
+  .diff-list{list-style:none;margin:0;padding:0;border:1.5px solid var(--ink);background:var(--paper);}
+  .diff-list li{display:flex;align-items:center;gap:15px;padding:16px 20px;border-bottom:1px dashed rgba(22,21,15,.22);font-family:"Archivo",sans-serif;font-weight:600;font-size:16.5px;}
+  .diff-list li:last-child{border-bottom:none;}
+  .diff-list li::before{content:"";flex:0 0 auto;width:16px;height:16px;background:var(--lime);border:1.5px solid var(--ink);transform:rotate(45deg);}
+
+  /* formula */
+  .formula{background:var(--paper-2);border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);}
+  .form-stack{max-width:1000px;margin:0 auto;}
+  .form-top{display:grid;grid-template-columns:1.1fr .9fr;gap:54px;align-items:center;}
+  .form-intro{max-width:520px;}
+  .form-intro h2{margin:0;font-size:clamp(28px,3.4vw,42px);}
+  .form-intro p{font-size:16.5px;line-height:1.6;color:var(--ink-soft);margin:22px 0 0;max-width:520px;}
+  .showcase{margin:0;border:1.5px solid var(--ink);overflow:hidden;background:var(--ink);}
+  .showcase img{width:100%;height:auto;display:block;}
+  .works{margin-top:42px;text-align:center;}
+  .works .lbl{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;}
+  .tags{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+  .tag{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.04em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:999px;padding:8px 15px;background:var(--paper);}
+  .specs{margin-top:46px;}
+  .spec-head{background:var(--lime);border:1.5px solid var(--ink);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;}
+  .spec-head b{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:800;font-size:16px;letter-spacing:.02em;white-space:nowrap;}
+  .spec-head .vol{font-family:"Space Mono",monospace;font-size:12px;font-weight:700;}
+  .spec-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;}
+  .spec-card{border:1.5px solid var(--ink);background:var(--paper);padding:22px 20px 24px;display:flex;flex-direction:column;gap:12px;}
+  .spec-card .k{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);}
+  .spec-card .v{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:700;font-size:19px;line-height:1.1;letter-spacing:-.01em;}
+
+  /* closing cta */
+  .closing{background:var(--cobalt);color:var(--paper);text-align:center;}
+  .closing .inner{padding:104px 0;}
+  .closing h2{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:800;letter-spacing:-.02em;line-height:.98;font-size:clamp(36px,5.4vw,68px);margin:0 auto;max-width:13ch;}
+  .closing p{font-size:17px;color:rgba(243,239,229,.8);margin:22px auto 34px;max-width:42ch;line-height:1.5;}
+
+  /* footer */
+  footer{background:var(--ink);color:var(--paper);}
+  .foot-top{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:32px;padding:64px 0 44px;}
+  .foot-brand .wm{color:var(--paper);}
+  .foot-brand .wm .a{color:var(--lime);}
+  .foot-brand p{margin:18px 0 0;font-size:15px;line-height:1.55;color:rgba(243,239,229,.66);max-width:32ch;}
+  .foot-col h4{font-family:"Space Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(243,239,229,.5);margin:0 0 16px;}
+  .foot-col a{display:block;text-decoration:none;font-size:14.5px;padding:6px 0;color:rgba(243,239,229,.86);}
+  .foot-col a:hover{color:var(--lime);}
+  .foot-note{border:1px dashed rgba(243,239,229,.28);border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-top:8px;}
+  .foot-note .mono{font-size:12px;letter-spacing:.04em;color:rgba(243,239,229,.78);line-height:1.5;}
+  .foot-bot{border-top:1px solid rgba(243,239,229,.16);display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 0;flex-wrap:wrap;}
+  .foot-bot .mono{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(243,239,229,.55);}
+
+  /* ---------- modal ---------- */
+  .backdrop{position:fixed;inset:0;background:rgba(22,21,15,.58);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:200;padding:24px;}
+  .backdrop.open{display:flex;animation:fade .2s ease;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+  .modal{position:relative;background:var(--paper);border:1.5px solid var(--ink);max-width:540px;width:100%;box-shadow:0 30px 80px rgba(22,21,15,.4);animation:pop .26s cubic-bezier(.2,.8,.3,1);}
+  @keyframes pop{from{transform:translateY(14px) scale(.97);opacity:0;}to{transform:none;opacity:1;}}
+  .modal .mhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1.5px solid var(--ink);}
+  .modal .mhead .mono{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;}
+  .modal .close{width:30px;height:30px;border:1.5px solid var(--ink);background:var(--paper);border-radius:50%;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;}
+  .modal .close:hover{background:var(--lime);}
+  .modal .comic{background:#fff;border-bottom:1.5px solid var(--ink);padding:14px;}
+  .modal .comic img{width:100%;height:auto;}
+  .modal .mbody{padding:26px 28px 30px;}
+  .modal .mbody h3{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:800;font-size:24px;letter-spacing:-.01em;margin:0 0 12px;}
+  .modal .mbody p{font-size:15.5px;line-height:1.55;color:var(--ink-soft);margin:0 0 20px;}
+  .wlform{display:flex;gap:10px;}
+  .wlform input{flex:1;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:15px;padding:14px 16px;border:1.5px solid var(--ink);background:var(--paper);border-radius:999px;outline:none;}
+  .wlform input:focus{box-shadow:0 0 0 3px rgba(30,34,196,.18);}
+  .wlform button{white-space:nowrap;}
+  .fineprint{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.06em;color:var(--ink-soft);margin-top:14px;}
+  .success{text-align:center;padding:8px 0 4px;}
+  .success .check{width:52px;height:52px;border-radius:50%;background:var(--lime);border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px;}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(20px);transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1);}
+  .reveal.in{opacity:1;transform:none;}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1 !important;transform:none !important;} .bottle{animation:none;}}
+
+  /* responsive */
+  @media (max-width:900px){
+    .hero-grid{grid-template-columns:1fr;min-height:auto;gap:8px;}
+    .stage{order:-1;min-height:420px;}
+    .bottle{height:54vh;}
+    .sci-head,.diff{grid-template-columns:1fr;gap:26px;}
+    .form-top{grid-template-columns:1fr;gap:30px;}
+    .form-intro{max-width:none;}
+    .foot-top{grid-template-columns:1fr 1fr;}
+    .navlinks .nl{display:none;}
+  }
+  @media (max-width:560px){
+    .wrap{padding:0 20px;}
+    .foot-top{grid-template-columns:1fr;}
+    .wlform{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<template id="__bundler_thumbnail" data-bg-color="#F3EFE5">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect x="510" y="250" width="180" height="330" rx="26" fill="#1E22C4"/>
+    <rect x="552" y="172" width="96" height="92" rx="12" fill="#15140F"/>
+    <rect x="566" y="150" width="68" height="34" rx="8" fill="#15140F"/>
+    <polygon points="612,300 548,452 596,452 584,556 668,388 618,388" fill="#C9F03B"/>
+  </svg>
+</template>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <div class="wrap navrow">
+    <div class="wm">FIELDST<span class="a">A</span>TIC<sup>™</sup></div>
+    <nav class="navlinks">
+      <a class="nl" href="#science">Science</a>
+      <a class="nl" href="#formula">Formula</a>
+      <button class="pill" data-order>Order now</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" data-screen-label="Hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="chip reveal">Next-gen vector protection ↗</span>
+      <h1 class="disp reveal" style="margin-top:24px;">Ticks don't<br>wait for<br>contact.</h1>
+      <p class="lede reveal">Ticks are <em>pulled</em> in by the static charge your clothes already carry — Fieldstatic neutralizes it before they ever reach your skin.</p>
+      <div class="cta-row reveal">
+        <button class="btn btn-ink" data-order>Order now</button>
+        <a class="scrolllink" href="#science">See the science ↓</a>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="glow" style="opacity: 1"></div>
+      <div class="field" id="heroField"></div>
+      <img class="bottle" src="assets/bottle-cut.png" alt="Fieldstatic Electro Shield tick defense spray bottle" />
+    </div>
+  </div>
+</section>
+
+<!-- ============ MARQUEE ============ -->
+<div class="marquee" aria-hidden="true">
+  <div class="mtrack" id="mtrack"></div>
+</div>
+
+<!-- ============ SCIENCE ============ -->
+<section id="science" class="sec-pad" data-screen-label="Science">
+  <div class="wrap">
+    <div class="sci-head">
+      <div class="reveal">
+        <h2 class="lead-h">There's a gap between the grass and you. Ticks cross it.</h2>
+      </div>
+      <p class="reveal">A 2023 <span class="src">University of Bristol study</span> confirmed that ticks exploit electrostatic fields to bridge the space between vegetation and a moving host — no crawling required. You've been defending against one mechanism. This is the other one.</p>
+    </div>
+
+    <figure class="figure reveal">
+      <img src="assets/comic-cut.png" alt="Four-panel diagram: ticks wait on grass, detect static charge, person sprays Fieldstatic, ticks are repelled by a neutralized field" />
+    </figure>
+
+    <div class="diff reveal">
+      <h3 class="diff-h">It isn't a repellent. It isn't DEET. It's a <em>different layer</em> entirely.</h3>
+      <ul class="diff-list">
+        <li>Safe on clothes, gear &amp; fabric</li>
+        <li>Safe around kids &amp; pets</li>
+        <li>Completely odorless</li>
+        <li>No DEET, no harsh chemicals</li>
+        <li>Not a repellent — a static shield</li>
+        <li>Invisible once it dries</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FORMULA ============ -->
+<section id="formula" class="formula sec-pad" data-screen-label="Formula">
+  <div class="wrap form-stack">
+    <div class="form-top">
+      <div class="reveal form-intro">
+        <h2 class="lead-h">Your regular anti-static spray wasn't built for this.</h2>
+        <p>Generic anti-static products solve laundry. Fieldstatic solves tick exposure. Low-residue, odorless, safe around pets — designed to be applied once before you head out, not once a wash cycle.</p>
+      </div>
+      <figure class="showcase reveal">
+        <img src="assets/2a066a9e-1ff9-4e43-a861-b268c728cfee.png" alt="Hiker on a mountain trail holding a Fieldstatic Electro Shield bottle, with two more hikers ahead" />
+      </figure>
+    </div>
+    <div class="specs reveal">
+      <div class="spec-head">
+        <b>ELECTRO SHIELD</b>
+        <span class="vol">6 FL OZ · 177 ML</span>
+      </div>
+      <div class="spec-cards">
+        <div class="spec-card"><span class="k">Residue</span><span class="v">Low / invisible dry</span></div>
+        <div class="spec-card"><span class="k">Scent</span><span class="v">Odorless</span></div>
+        <div class="spec-card"><span class="k">Around pets</span><span class="v">Safe</span></div>
+        <div class="spec-card"><span class="k">Application</span><span class="v">Once, before you go</span></div>
+        <div class="spec-card"><span class="k">Class</span><span class="v">Not DEET · not a repellent</span></div>
+      </div>
+    </div>
+    <div class="works reveal">
+      <div class="lbl">Works on</div>
+      <div class="tags">
+        <span class="tag">Hiking layers</span>
+        <span class="tag">Dog-walking gear</span>
+        <span class="tag">Camp blankets</span>
+        <span class="tag">Garden clothing</span>
+        <span class="tag">Kids' outerwear</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CLOSING CTA ============ -->
+<section class="closing" data-screen-label="Closing">
+  <div class="wrap inner">
+    <h2 class="reveal">Tick season doesn't pause. Neither should your defense.</h2>
+    <p class="reveal">A different layer of protection, built on the mechanism everyone else ignores.</p>
+    <div class="reveal"><button class="btn btn-lime" data-order>Order now →</button></div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer data-screen-label="Footer">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <div class="wm">FIELDST<span class="a">A</span>TIC<sup>™</sup></div>
+        <p>Made for people who'd rather be outside. A different layer of tick defense — no DEET, no drama.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="#science">The science</a>
+        <a href="#formula">The formula</a>
+        <a href="#" data-order>Order</a>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="mailto:hello@fieldstatic.co">Contact</a>
+        <a href="#">Stockists</a>
+      </div>
+      <div class="foot-col">
+        <h4>Assembly</h4>
+        <div class="foot-note">
+          <span class="mono">No allen key required. Step 1: spray. Step 2: go outside. There is no step 3.</span>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span class="mono">© 2026 Fieldstatic — 6 fl oz of confidence.</span>
+      <span class="mono">Not DEET · Not a repellent · A different layer</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ ORDER / WAITLIST MODAL ============ -->
+<div class="backdrop" id="backdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="mhead">
+      <span class="mono">Order · Batch No. 001</span>
+      <button class="close" id="modalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="comic">
+      <img src="assets/comic-soldout.png" alt="Illustration of a person shrugging beside empty shelves: we're sold out" />
+    </div>
+    <div class="mbody" id="modalBody">
+      <h3 id="modalTitle">Ah. About that.</h3>
+      <p>Our launch batch sold out faster than we expected — the shelves are empty and we're already mixing the next one. Drop your email and you'll be first in line the moment Fieldstatic ships again.</p>
+      <form class="wlform" id="wlform">
+        <input type="email" id="wlemail" placeholder="you@example.com" required />
+        <button type="submit" class="btn btn-lime">Join the waitlist</button>
+      </form>
+      <div class="fineprint">No spam. One email when the next batch is ready — that's the whole plan.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* nav scroll state */
+  var nav=document.getElementById('nav');
+  function onScroll(){ nav.classList.toggle('scrolled', window.scrollY>10); }
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+
+  /* hero static field */
+  var field=document.getElementById('heroField');
+  if(field){
+    [0,1,2].forEach(function(i){
+      var r=document.createElement('div'); r.className='ring';
+      var s=480; r.style.width=s+'px'; r.style.height=s+'px';
+      r.style.animation='ringpulse 3.8s ease-out '+(i*1.25)+'s infinite';
+      field.appendChild(r);
+    });
+    var charges=[['+',14,30,22,4],['+',24,60,16,5],['+',80,28,18,4.4],['+',86,64,22,4.8],['−',8,76,15,6]];
+    charges.forEach(function(c,i){
+      var el=document.createElement('div'); el.className='charge'; el.textContent=c[0];
+      el.style.left=c[1]+'%'; el.style.top=c[2]+'%'; el.style.fontSize=c[3]+'px';
+      el.style.animation='floaty '+c[4]+'s ease-in-out '+(i*0.3)+'s infinite';
+      if(c[0]==='−'){el.style.color='var(--ink)';el.style.opacity='.5';}
+      field.appendChild(el);
+    });
+  }
+
+  /* repel accents over comic figure */
+  var repel=document.getElementById('repel');
+  if(repel){
+    var pts=[[88,24],[91,60],[8,18],[6,72]];
+    pts.forEach(function(p,i){
+      var x=document.createElement('div');
+      x.textContent='✕';
+      x.style.position='absolute'; x.style.left=p[0]+'%'; x.style.top=p[1]+'%';
+      x.style.color='#1E22C4'; x.style.fontFamily='"Space Mono",monospace'; x.style.fontWeight='700';
+      x.style.fontSize='15px'; x.style.opacity='0';
+      x.style.animation='floaty 3.4s ease-in-out '+(i*0.5)+'s infinite';
+      repel.appendChild(x);
+    });
+  }
+
+  /* marquee */
+  var mt=document.getElementById('mtrack');
+  if(mt){
+    var items=['Electrostatic defense','Invisible dry barrier','Gear-safe formula','Not DEET','Odorless','Pet-safe','Apply once · go outside'];
+    var unit=document.createElement('span');
+    items.forEach(function(t){ unit.appendChild(document.createTextNode(t)); var i=document.createElement('i'); i.textContent='✦'; unit.appendChild(i); });
+    mt.appendChild(unit); mt.appendChild(unit.cloneNode(true));
+  }
+
+  /* reveal on scroll (scroll/load driven, with a hard fallback for preview
+     iframes that freeze CSS transitions — there, opacity never animates to 1,
+     so we force the visible end-state directly once the fade window passes). */
+  var reveals=[].slice.call(document.querySelectorAll('.reveal'));
+  reveals.forEach(function(el,i){ el.style.transitionDelay=(Math.min(i%3,2)*0.05)+'s'; });
+  function forceShow(el){ el.style.transition='none'; el.style.opacity='1'; el.style.transform='none'; }
+  function reveal(el){
+    el.classList.add('in');
+    // if the fade hasn't landed (frozen-transition environments), guarantee visibility
+    setTimeout(function(){ if(getComputedStyle(el).opacity!=='1') forceShow(el); }, 1000);
+  }
+  function showInView(){
+    var vh=window.innerHeight||document.documentElement.clientHeight;
+    for(var i=reveals.length-1;i>=0;i--){
+      var r=reveals[i].getBoundingClientRect();
+      if(r.top < vh*0.94 && r.bottom > -40){ reveal(reveals[i]); reveals.splice(i,1); }
+    }
+  }
+  var throttle=false;
+  function onScrollR(){ showInView(); if(throttle) return; throttle=true; setTimeout(function(){ throttle=false; showInView(); }, 80); }
+  window.addEventListener('scroll',onScrollR,{passive:true});
+  window.addEventListener('resize',onScrollR);
+  window.addEventListener('load',showInView);
+  showInView();
+  /* last-resort: if scroll events never fire, reveal whatever remains after 2.5s */
+  setTimeout(function(){ reveals.slice().forEach(reveal); reveals.length=0; }, 2500);
+
+  /* modal */
+  var backdrop=document.getElementById('backdrop');
+  var modalBody=document.getElementById('modalBody');
+  var bodyHTML=modalBody.innerHTML;
+  var lastFocus=null;
+  function openModal(){
+    modalBody.innerHTML=bodyHTML; bindForm();
+    backdrop.classList.add('open'); document.body.style.overflow='hidden';
+    lastFocus=document.activeElement;
+    var inp=document.getElementById('wlemail'); if(inp){ setTimeout(function(){inp.focus();},80); }
+  }
+  function closeModal(){ backdrop.classList.remove('open'); document.body.style.overflow=''; if(lastFocus&&lastFocus.focus)lastFocus.focus(); }
+  document.querySelectorAll('[data-order]').forEach(function(b){ b.addEventListener('click', function(e){ e.preventDefault(); openModal(); }); });
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  backdrop.addEventListener('click', function(e){ if(e.target===backdrop) closeModal(); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && backdrop.classList.contains('open')) closeModal(); });
+
+  function bindForm(){
+    var f=document.getElementById('wlform');
+    if(!f) return;
+    f.addEventListener('submit', function(e){
+      e.preventDefault();
+      var input=document.getElementById('wlemail');
+      var btn=f.querySelector('button[type="submit"]');
+      var email=input.value.trim();
+      if(!email) return;
+      var prevErr=document.getElementById('wlerror');
+      if(prevErr) prevErr.remove();
+      btn.disabled=true; input.disabled=true;
+      var prevLabel=btn.textContent; btn.textContent='Saving…';
+
+      function showSuccess(){
+        modalBody.innerHTML='<div class="success">'
+          +'<div class="check">✓</div>'
+          +'<h3 style="margin:0 0 10px;">You\'re on the list.</h3>'
+          +'<p style="margin:0 auto;max-width:36ch;">We saved your spot'+(email?' for <b style="color:var(--ink)">'+email.replace(/</g,'&lt;')+'</b>':'')+'. One email when Batch No. 002 ships — then it\'s your move.</p>'
+          +'<div class="fineprint" style="margin-top:18px;">You can close this and get back outside.</div>'
+          +'</div>';
+      }
+      function showError(msg){
+        btn.disabled=false; input.disabled=false; btn.textContent=prevLabel;
+        var err=document.createElement('div');
+        err.id='wlerror'; err.className='fineprint';
+        err.style.color='#b3261e'; err.style.marginTop='12px';
+        err.textContent=msg||'Something went wrong. Please try again.';
+        f.parentNode.insertBefore(err, f.nextSibling);
+      }
+
+      fetch('/api/subscribe',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email:email})
+      }).then(function(r){
+        return r.json().catch(function(){return {};}).then(function(data){
+          if(r.ok && data && data.ok){ showSuccess(); }
+          else { showError(data && data.error ? data.error : 'That email didn\'t go through. Check it and try again.'); }
+        });
+      }).catch(function(){
+        showError('Network hiccup — please try again in a moment.');
+      });
+    });
+  }
+  document.getElementById('modalClose').setAttribute('tabindex','0');
+})();
+</script>
+</body>
+</html>
