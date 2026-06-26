@@ -38,14 +38,14 @@
     font-family:"Space Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
     padding:7px 13px;clip-path:polygon(0 0,100% 0,100% 100%,11px 100%,0 calc(100% - 11px));}
   .eyebrow{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--cobalt);}
-  .btn{display:inline-flex;align-items:center;gap:10px;cursor:pointer;border:none;white-space:nowrap;
+  .btn{display:inline-flex;align-items:center;gap:10px;cursor:pointer;border:none;white-space:nowrap;text-decoration:none;
     font-family:"Archivo",sans-serif;font-weight:700;font-size:15px;letter-spacing:.01em;border-radius:999px;padding:15px 28px;transition:transform .14s ease, background .18s ease;}
   .btn:active{transform:translateY(1px);}
   .btn-ink{background:var(--ink);color:var(--paper);}
   .btn-ink:hover{background:var(--cobalt);}
   .btn-lime{background:var(--lime);color:var(--ink);border:1.5px solid var(--ink);font-weight:800;}
   .btn-lime:hover{background:var(--lime-hi);}
-  .pill{font-family:"Space Mono",monospace;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  .pill{font-family:"Space Mono",monospace;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;
     background:var(--lime);color:var(--ink);border:1.5px solid var(--ink);border-radius:999px;padding:9px 19px;cursor:pointer;transition:background .18s;}
   .pill:hover{background:var(--lime-hi);}
 
@@ -178,28 +178,7 @@
   .foot-bot a.mono{text-decoration:none;transition:color .15s;}
   .foot-bot a.mono:hover{color:var(--lime);}
 
-  /* ---------- modal ---------- */
-  .backdrop{position:fixed;inset:0;background:rgba(22,21,15,.58);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:200;padding:24px;}
-  .backdrop.open{display:flex;animation:fade .2s ease;}
-  @keyframes fade{from{opacity:0;}to{opacity:1;}}
-  .modal{position:relative;background:var(--paper);border:1.5px solid var(--ink);max-width:540px;width:100%;box-shadow:0 30px 80px rgba(22,21,15,.4);animation:pop .26s cubic-bezier(.2,.8,.3,1);}
-  @keyframes pop{from{transform:translateY(14px) scale(.97);opacity:0;}to{transform:none;opacity:1;}}
-  .modal .mhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1.5px solid var(--ink);}
-  .modal .mhead .mono{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;}
-  .modal .close{width:30px;height:30px;border:1.5px solid var(--ink);background:var(--paper);border-radius:50%;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;}
-  .modal .close:hover{background:var(--lime);}
-  .modal .comic{background:#fff;border-bottom:1.5px solid var(--ink);padding:14px;}
-  .modal .comic img{width:100%;height:auto;}
-  .modal .mbody{padding:26px 28px 30px;}
-  .modal .mbody h3{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:800;font-size:24px;letter-spacing:-.01em;margin:0 0 12px;}
-  .modal .mbody p{font-size:15.5px;line-height:1.55;color:var(--ink-soft);margin:0 0 20px;}
-  .wlform{display:flex;gap:10px;}
-  .wlform input{flex:1;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:15px;padding:14px 16px;border:1.5px solid var(--ink);background:var(--paper);border-radius:999px;outline:none;}
-  .wlform input:focus{box-shadow:0 0 0 3px rgba(30,34,196,.18);}
-  .wlform button{white-space:nowrap;}
-  .fineprint{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.06em;color:var(--ink-soft);margin-top:14px;}
-  .success{text-align:center;padding:8px 0 4px;}
-  .success .check{width:52px;height:52px;border-radius:50%;background:var(--lime);border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px;}
+  /* order modal removed — replaced by the /cart + /sold-out flow */
 
   /* ---------- cookie notice ---------- */
   .cookie{position:fixed;left:0;right:0;bottom:0;z-index:180;transform:translateY(130%);transition:transform .42s cubic-bezier(.2,.8,.3,1);padding:0 0 18px;pointer-events:none;}
@@ -243,7 +222,6 @@
   @media (max-width:560px){
     .wrap{padding:0 20px;}
     .foot-top{grid-template-columns:1fr;}
-    .wlform{flex-direction:column;}
   }
 </style>
 </head>
@@ -265,7 +243,7 @@
     <nav class="navlinks">
       <a class="nl" href="#science">Science</a>
       <a class="nl" href="#formula">Formula</a>
-      <button class="pill" data-order>Order now</button>
+      <a class="pill" href="/cart">Order now</a>
     </nav>
   </div>
 </header>
@@ -292,7 +270,7 @@
       </figure>
       <p class="lede reveal">Ticks are <em>pulled</em> in by the static charge your clothes already carry — Fieldstatic neutralizes it before they ever reach your skin.</p>
       <div class="cta-row reveal">
-        <button class="btn btn-ink" data-order>Order now</button>
+        <a class="btn btn-ink" href="/cart">Order now</a>
         <a class="scrolllink" href="#science">See the science ↓</a>
       </div>
     </div>
@@ -380,7 +358,7 @@
   <div class="wrap inner">
     <h2 class="reveal">Tick season doesn't pause. Neither should your defense.</h2>
     <p class="reveal">A different layer of protection, built on the mechanism everyone else ignores.</p>
-    <div class="reveal"><button class="btn btn-lime" data-order>Order now →</button></div>
+    <div class="reveal"><a class="btn btn-lime" href="/cart">Order now →</a></div>
   </div>
 </section>
 
@@ -396,7 +374,7 @@
         <h4>Product</h4>
         <a href="#science">The science</a>
         <a href="#formula">The formula</a>
-        <a href="#" data-order>Order</a>
+        <a href="/cart">Order</a>
       </div>
       <div class="foot-col">
         <h4>Company</h4>
@@ -419,28 +397,6 @@
     </div>
   </div>
 </footer>
-
-<!-- ============ ORDER / WAITLIST MODAL ============ -->
-<div class="backdrop" id="backdrop">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="mhead">
-      <span class="mono">Order · Batch No. 001</span>
-      <button class="close" id="modalClose" aria-label="Close">✕</button>
-    </div>
-    <div class="comic">
-      <img src="assets/comic-soldout.png" alt="Illustration of a person shrugging beside empty shelves: we're sold out" />
-    </div>
-    <div class="mbody" id="modalBody">
-      <h3 id="modalTitle">Ah. About that.</h3>
-      <p>Our launch batch sold out faster than we expected — the shelves are empty and we're already mixing the next one. Drop your email and you'll be first in line the moment Fieldstatic ships again.</p>
-      <form class="wlform" id="wlform">
-        <input type="email" id="wlemail" placeholder="you@example.com" required />
-        <button type="submit" class="btn btn-lime">Join the waitlist</button>
-      </form>
-      <div class="fineprint">No spam. One email when the next batch is ready — that's the whole plan.</div>
-    </div>
-  </div>
-</div>
 
 <!-- ============ COOKIE NOTICE ============ -->
 <div class="cookie" id="cookieBar" role="dialog" aria-label="Cookie notice" aria-live="polite">
@@ -530,69 +486,6 @@
   /* last-resort: if scroll events never fire, reveal whatever remains after 2.5s */
   setTimeout(function(){ reveals.slice().forEach(reveal); reveals.length=0; }, 2500);
 
-  /* modal */
-  var backdrop=document.getElementById('backdrop');
-  var modalBody=document.getElementById('modalBody');
-  var bodyHTML=modalBody.innerHTML;
-  var lastFocus=null;
-  function openModal(){
-    modalBody.innerHTML=bodyHTML; bindForm();
-    backdrop.classList.add('open'); document.body.style.overflow='hidden';
-    lastFocus=document.activeElement;
-    var inp=document.getElementById('wlemail'); if(inp){ setTimeout(function(){inp.focus();},80); }
-  }
-  function closeModal(){ backdrop.classList.remove('open'); document.body.style.overflow=''; if(lastFocus&&lastFocus.focus)lastFocus.focus(); }
-  document.querySelectorAll('[data-order]').forEach(function(b){ b.addEventListener('click', function(e){ e.preventDefault(); openModal(); }); });
-  document.getElementById('modalClose').addEventListener('click', closeModal);
-  backdrop.addEventListener('click', function(e){ if(e.target===backdrop) closeModal(); });
-  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && backdrop.classList.contains('open')) closeModal(); });
-
-  function bindForm(){
-    var f=document.getElementById('wlform');
-    if(!f) return;
-    f.addEventListener('submit', function(e){
-      e.preventDefault();
-      var input=document.getElementById('wlemail');
-      var btn=f.querySelector('button[type="submit"]');
-      var email=input.value.trim();
-      if(!email) return;
-      var prevErr=document.getElementById('wlerror');
-      if(prevErr) prevErr.remove();
-      btn.disabled=true; input.disabled=true;
-      var prevLabel=btn.textContent; btn.textContent='Saving…';
-
-      function showSuccess(){
-        modalBody.innerHTML='<div class="success">'
-          +'<div class="check">✓</div>'
-          +'<h3 style="margin:0 0 10px;">You\'re on the list.</h3>'
-          +'<p style="margin:0 auto;max-width:36ch;">We saved your spot'+(email?' for <b style="color:var(--ink)">'+email.replace(/</g,'&lt;')+'</b>':'')+'. One email when Batch No. 002 ships — then it\'s your move.</p>'
-          +'<div class="fineprint" style="margin-top:18px;">You can close this and get back outside.</div>'
-          +'</div>';
-      }
-      function showError(msg){
-        btn.disabled=false; input.disabled=false; btn.textContent=prevLabel;
-        var err=document.createElement('div');
-        err.id='wlerror'; err.className='fineprint';
-        err.style.color='#b3261e'; err.style.marginTop='12px';
-        err.textContent=msg||'Something went wrong. Please try again.';
-        f.parentNode.insertBefore(err, f.nextSibling);
-      }
-
-      fetch('/api/subscribe',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email:email})
-      }).then(function(r){
-        return r.json().catch(function(){return {};}).then(function(data){
-          if(r.ok && data && data.ok){ showSuccess(); }
-          else { showError(data && data.error ? data.error : 'That email didn\'t go through. Check it and try again.'); }
-        });
-      }).catch(function(){
-        showError('Network hiccup — please try again in a moment.');
-      });
-    });
-  }
-  document.getElementById('modalClose').setAttribute('tabindex','0');
 
   /* ---- cookie consent ----------------------------------------------------
      Stores the visitor's choice and exposes a hook for observability tools

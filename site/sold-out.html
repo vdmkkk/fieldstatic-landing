@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>You're on the list — Fieldstatic</title>
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#F3EFE5;
+    --paper-2:#EAE3D3;
+    --ink:#16150F;
+    --ink-soft:#4a473c;
+    --cobalt:#1E22C4;
+    --lime:#C9F03B;
+    --lime-hi:#DBFF4D;
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+  .disp{font-family:"Archivo Expanded","Archivo",sans-serif;}
+  .mono{font-family:"Space Mono",monospace;}
+  a{color:inherit;}
+  img{display:block;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px;}
+
+  /* nav */
+  header.nav{position:sticky;top:0;z-index:60;background:rgba(243,239,229,.9);backdrop-filter:blur(8px);box-shadow:0 1px 0 rgba(22,21,15,.14);}
+  .navrow{max-width:var(--maxw);margin:0 auto;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+  .wm{font-family:"Archivo",sans-serif;font-weight:800;font-size:21px;letter-spacing:.16em;display:flex;align-items:center;gap:2px;text-decoration:none;}
+  .wm sup{font-size:9px;font-weight:600;top:-1em;}
+  .wm .a{color:var(--cobalt);}
+  .navtag{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);}
+
+  /* layout */
+  .so{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:54px 0 72px;}
+  .so-eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:"Space Mono",monospace;font-size:11px;font-weight:700;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--ink);background:var(--lime);border:1.5px solid var(--ink);
+    padding:7px 14px;border-radius:999px;margin-bottom:22px;}
+  .so-eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--cobalt);}
+  .so h1{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:800;letter-spacing:-.022em;line-height:.98;
+    font-size:clamp(36px,5.4vw,62px);margin:0 0 8px;}
+  .so h1 .hl{-webkit-box-decoration-break:clone;box-decoration-break:clone;padding:.02em .1em;
+    background:linear-gradient(101deg, rgba(201,240,59,.6) 0%, var(--lime) 6%, var(--lime-hi) 94%, rgba(201,240,59,.5) 100%);}
+  .so .greet{font-family:"Space Mono",monospace;font-size:13px;letter-spacing:.04em;color:var(--cobalt);margin:0 0 18px;display:none;}
+  .so p.lede{font-size:17px;line-height:1.62;color:var(--ink-soft);margin:0 0 18px;max-width:52ch;}
+  .so p.lede b{color:var(--ink);}
+
+  /* confirm + perk stack */
+  .conf{border:1.5px solid var(--ink);background:var(--paper);margin-top:6px;}
+  .conf-row{display:flex;gap:14px;align-items:flex-start;padding:18px 20px;}
+  .conf-row + .conf-row{border-top:1.5px dashed rgba(22,21,15,.2);}
+  .conf-ic{flex:0 0 auto;width:34px;height:34px;border:1.5px solid var(--ink);border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:17px;background:var(--lime);}
+  .conf-tx h3{font-family:"Archivo",sans-serif;font-weight:700;font-size:15.5px;margin:1px 0 3px;}
+  .conf-tx p{font-size:14px;line-height:1.55;color:var(--ink-soft);margin:0;}
+  .conf-tx p b{color:var(--ink);}
+
+  /* perk / code */
+  .perk{margin-top:20px;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);padding:20px 22px;
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:space-between;}
+  .perk-l .k{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);margin-bottom:4px;}
+  .perk-l .v{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:800;font-size:22px;line-height:1.05;}
+  .perk-l .v small{font-weight:700;font-size:13px;color:rgba(243,239,229,.7);font-family:"Space Mono",monospace;display:block;margin-top:5px;letter-spacing:.02em;}
+  .code{display:inline-flex;align-items:center;gap:0;border:1.5px dashed var(--lime);border-radius:10px;overflow:hidden;background:rgba(201,240,59,.08);}
+  .code .val{font-family:"Space Mono",monospace;font-weight:700;font-size:17px;letter-spacing:.12em;color:var(--lime);padding:11px 16px;}
+  .code .cp{align-self:stretch;border:none;border-left:1.5px dashed var(--lime);background:transparent;color:var(--paper);
+    cursor:pointer;font-family:"Space Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:0 14px;transition:background .15s,color .15s;}
+  .code .cp:hover{background:var(--lime);color:var(--ink);}
+  .perk-note{display:none;font-family:"Space Mono",monospace;font-size:12px;line-height:1.5;color:rgba(243,239,229,.78);max-width:30ch;}
+
+  .actions{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:30px;}
+  .btn{display:inline-flex;align-items:center;gap:10px;cursor:pointer;border:none;white-space:nowrap;text-decoration:none;
+    font-family:"Archivo",sans-serif;font-weight:800;font-size:15px;letter-spacing:.01em;border-radius:999px;padding:15px 28px;transition:transform .14s ease, background .18s ease;}
+  .btn:active{transform:translateY(1px);}
+  .btn-ink{background:var(--ink);color:var(--paper);}
+  .btn-ink:hover{background:var(--cobalt);}
+  .backlink{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;border-bottom:1.5px solid var(--ink);padding-bottom:2px;}
+
+  /* art */
+  .so-art{border:1.5px solid var(--ink);background:#fff;overflow:hidden;}
+  .so-art img{width:100%;height:auto;display:block;}
+  .so-art .cap{border-top:1.5px solid var(--ink);background:var(--paper-2);padding:11px 16px;
+    font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);text-align:center;}
+
+  /* footer */
+  footer{background:var(--ink);color:var(--paper);}
+  .foot-bot{max-width:var(--maxw);margin:0 auto;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;}
+  .foot-bot .mono,.foot-bot a{font-family:"Space Mono",monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(243,239,229,.55);text-decoration:none;}
+  .foot-bot a:hover{color:var(--lime);}
+
+  @media (max-width:880px){
+    .so{grid-template-columns:1fr;gap:30px;padding:36px 0 60px;}
+    .so-art{order:-1;max-width:460px;}
+  }
+  @media (max-width:560px){
+    .wrap{padding:0 20px;}
+    .navrow{padding:14px 20px;}
+    .perk{flex-direction:column;align-items:flex-start;gap:14px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="navrow">
+    <a class="wm" href="/">FIELDST<span class="a">A</span>TIC<sup>™</sup></a>
+    <span class="navtag">Order · Batch No. 001</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="so">
+    <div class="so-copy">
+      <span class="so-eyebrow"><span class="dot"></span> Sold out — for now</span>
+      <p class="greet" id="greet">Thanks, <span id="greetName"></span> — here's the situation.</p>
+      <h1 class="disp">Batch No. 001 is <span class="hl">gone.</span></h1>
+      <p class="lede">We are genuinely, hand-on-heart sorry to leave you waiting. Our very first run of Fieldstatic emptied the shelves faster than anyone here dared to predict — a good problem, the kind that keeps the mixing tanks running through the night, but a problem for <em>you</em> right now, and we don't take that lightly.</p>
+      <p class="lede">So here's exactly where things stand — no forms, nothing else for you to do:</p>
+
+      <div class="conf">
+        <div class="conf-row">
+          <div class="conf-ic">✓</div>
+          <div class="conf-tx">
+            <h3>You're already on the waitlist</h3>
+            <p>We added you automatically when you reached this page — <b id="confEmail">your details are saved</b>. No second sign-up, no re-typing your email.</p>
+          </div>
+        </div>
+        <div class="conf-row">
+          <div class="conf-ic">✉</div>
+          <div class="conf-tx">
+            <h3>We'll reach out the moment Batch No. 002 is ready</h3>
+            <p>You'll be among the first to hear — one email, the day it ships. <b>No spam in between.</b></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="perk" id="perk">
+        <div class="perk-l">
+          <div class="k">Your waitlist thank-you</div>
+          <div class="v">10% off your first order<small>For getting here early — applied when we reopen.</small></div>
+        </div>
+        <div class="code" id="codeBox">
+          <span class="val" id="codeVal">FS-XXXXXX</span>
+          <button class="cp" id="copyBtn" type="button">Copy</button>
+        </div>
+        <p class="perk-note" id="perkNote">Your 10% is locked to your email — we'll include it when we get in touch.</p>
+      </div>
+
+      <div class="actions">
+        <a class="btn btn-ink" href="/">Back to fieldstatic.shop</a>
+        <a class="backlink" href="/#science">Re-read the science ↓</a>
+      </div>
+    </div>
+
+    <figure class="so-art">
+      <img src="assets/comic-soldout.png" alt="Illustration: empty shelves where the Fieldstatic bottles used to be" />
+      <figcaption class="cap">Batch No. 001 · Completely sold out</figcaption>
+    </figure>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-bot">
+    <span class="mono">© 2026 Fieldstatic — suffering from success.</span>
+    <a href="/">← Back to fieldstatic.shop</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var data={};
+  try{ data=JSON.parse(sessionStorage.getItem('fs_order')||'{}')||{}; }catch(_){ data={}; }
+
+  var firstName=(data.name?(''+data.name).trim().split(/\s+/)[0]:'');
+  var email=(data.email?(''+data.email).trim():'');
+  var code=(data.code?(''+data.code).trim():'');
+
+  // personalize greeting
+  if(firstName){
+    var gn=document.getElementById('greetName');
+    gn.textContent=firstName.replace(/</g,'');
+    document.getElementById('greet').style.display='block';
+  }
+  // confirm which email is saved
+  if(email){
+    document.getElementById('confEmail').textContent='we saved '+email.replace(/</g,'');
+  }
+
+  // discount code: show the real code if we have it, otherwise an email-locked note
+  if(code){
+    document.getElementById('codeVal').textContent=code;
+    var copyBtn=document.getElementById('copyBtn');
+    copyBtn.addEventListener('click', function(){
+      var done=function(){ copyBtn.textContent='Copied ✓'; setTimeout(function(){ copyBtn.textContent='Copy'; },1800); };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(code).then(done, done);
+      } else {
+        var r=document.createRange(); r.selectNode(document.getElementById('codeVal'));
+        var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        try{ document.execCommand('copy'); }catch(_){}
+        sel.removeAllRanges(); done();
+      }
+    });
+  } else {
+    // no code in session (e.g. opened directly) — show the locked-to-email note instead
+    document.getElementById('codeBox').style.display='none';
+    document.getElementById('perkNote').style.display='block';
+  }
+})();
+</script>
+</body>
+</html>

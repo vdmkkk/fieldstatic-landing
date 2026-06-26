@@ -21,6 +21,7 @@ import json
 import mimetypes
 import os
 import re
+import secrets
 import sqlite3
 import threading
 from datetime import datetime, timezone
@@ -47,13 +48,23 @@ def get_db():
         _conn.execute("PRAGMA journal_mode=WAL;")
         _conn.execute(
             """CREATE TABLE IF NOT EXISTS subscribers (
-                   id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                   email      TEXT NOT NULL,
-                   created_at TEXT NOT NULL,   -- ISO 8601 UTC
-                   ip         TEXT,
-                   user_agent TEXT
+                   id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                   email         TEXT NOT NULL,
+                   created_at    TEXT NOT NULL,   -- ISO 8601 UTC
+                   ip            TEXT,
+                   user_agent    TEXT,
+                   name          TEXT,
+                   quantity      INTEGER,
+                   discount_code TEXT
                )"""
         )
+        # migrate databases created before the cart/order fields existed
+        existing = {row[1] for row in _conn.execute("PRAGMA table_info(subscribers)").fetchall()}
+        for col, ddl in (("name", "name TEXT"),
+                         ("quantity", "quantity INTEGER"),
+                         ("discount_code", "discount_code TEXT")):
+            if col not in existing:
+                _conn.execute("ALTER TABLE subscribers ADD COLUMN " + ddl)
         _conn.commit()
     return _conn
 
@@ -119,13 +130,21 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(400, {"ok": False, "error": "Invalid request."})
         raw = self.rfile.read(length)
         email = ""
+        name = ""
+        quantity = 1
         ctype = (self.headers.get("Content-Type") or "").lower()
         try:
             if "application/json" in ctype:
-                email = (json.loads(raw.decode("utf-8")).get("email") or "").strip()
+                payload = json.loads(raw.decode("utf-8"))
+                email = (payload.get("email") or "").strip()
+                name = (payload.get("name") or "").strip()
+                quantity = payload.get("quantity", 1)
             else:
                 from urllib.parse import parse_qs
-                email = (parse_qs(raw.decode("utf-8")).get("email", [""])[0]).strip()
+                form = parse_qs(raw.decode("utf-8"))
+                email = (form.get("email", [""])[0]).strip()
+                name = (form.get("name", [""])[0]).strip()
+                quantity = form.get("quantity", ["1"])[0]
         except Exception:
             return self._json(400, {"ok": False, "error": "Invalid request."})
 
@@ -133,19 +152,29 @@ class Handler(BaseHTTPRequestHandler):
         if not email or len(email) > MAX_EMAIL_LEN or not EMAIL_RE.match(email):
             return self._json(400, {"ok": False, "error": "Please enter a valid email address."})
 
+        name = name[:120]
+        try:
+            quantity = int(quantity)
+        except (TypeError, ValueError):
+            quantity = 1
+        quantity = max(1, min(99, quantity))
+
+        # a per-signup waitlist perk code (10% off when the next batch reopens)
+        code = "FS-" + secrets.token_hex(3).upper()
         ua = (self.headers.get("User-Agent") or "")[:500]
         ip = self._client_ip()
         try:
             with _db_lock:
                 db = get_db()
                 db.execute(
-                    "INSERT INTO subscribers (email, created_at, ip, user_agent) VALUES (?,?,?,?)",
-                    (email, now_iso(), ip, ua),
+                    "INSERT INTO subscribers (email, created_at, ip, user_agent, name, quantity, discount_code)"
+                    " VALUES (?,?,?,?,?,?,?)",
+                    (email, now_iso(), ip, ua, name, quantity, code),
                 )
                 db.commit()
         except Exception:
             return self._json(500, {"ok": False, "error": "Could not save right now. Please try again."})
-        return self._json(200, {"ok": True})
+        return self._json(200, {"ok": True, "code": code})
 
     # ---- admin auth ----------------------------------------------------
     def _auth_ok(self):
@@ -173,26 +202,31 @@ class Handler(BaseHTTPRequestHandler):
         with _db_lock:
             db = get_db()
             rows = db.execute(
-                "SELECT email, created_at, ip, user_agent FROM subscribers ORDER BY id DESC"
+                "SELECT email, created_at, ip, user_agent, name, quantity, discount_code"
+                " FROM subscribers ORDER BY id DESC"
             ).fetchall()
             total = len(rows)
             unique = db.execute("SELECT COUNT(DISTINCT email) FROM subscribers").fetchone()[0]
 
         trs = []
-        for i, (email, created, ip, ua) in enumerate(rows):
+        for i, (email, created, ip, ua, name, qty, code) in enumerate(rows):
             trs.append(
-                "<tr><td class='num'>%d</td><td class='em'>%s</td><td class='ts'>%s</td>"
+                "<tr><td class='num'>%d</td><td class='nm'>%s</td><td class='em'>%s</td>"
+                "<td class='qt'>%s</td><td class='cd'>%s</td><td class='ts'>%s</td>"
                 "<td class='ip'>%s</td><td class='ua'>%s</td></tr>"
                 % (
                     total - i,
+                    html.escape(name or "—"),
                     html.escape(email),
+                    html.escape(str(qty) if qty is not None else "—"),
+                    html.escape(code or "—"),
                     html.escape(created),
                     html.escape(ip or ""),
                     html.escape((ua or "")[:120]),
                 )
             )
         body = trs and "".join(trs) or (
-            "<tr><td colspan='5' class='empty'>No emails collected yet.</td></tr>"
+            "<tr><td colspan='8' class='empty'>No orders collected yet.</td></tr>"
         )
         page = ADMIN_HTML.format(
             total=total, unique=unique, rows=body, generated=now_iso()
@@ -205,11 +239,13 @@ class Handler(BaseHTTPRequestHandler):
         with _db_lock:
             db = get_db()
             rows = db.execute(
-                "SELECT id, email, created_at, ip, user_agent FROM subscribers ORDER BY id DESC"
+                "SELECT id, name, email, quantity, discount_code, created_at, ip, user_agent"
+                " FROM subscribers ORDER BY id DESC"
             ).fetchall()
         buf = io.StringIO()
         w = csv.writer(buf)
-        w.writerow(["id", "email", "collected_at_utc", "ip", "user_agent"])
+        w.writerow(["id", "name", "email", "quantity", "discount_code",
+                    "collected_at_utc", "ip", "user_agent"])
         for r in rows:
             w.writerow(r)
         self._send(
@@ -226,6 +262,9 @@ class Handler(BaseHTTPRequestHandler):
         full = os.path.join(STATIC_DIR, rel)
         if not os.path.abspath(full).startswith(os.path.abspath(STATIC_DIR)):
             return self._send(403, "Forbidden")
+        # allow pretty URLs: /cart -> cart.html, /sold-out -> sold-out.html
+        if not os.path.isfile(full) and os.path.isfile(full + ".html"):
+            full += ".html"
         if not os.path.isfile(full):
             return self._send(404, "Not found")
         ctype = mimetypes.guess_type(full)[0] or "application/octet-stream"
@@ -272,7 +311,10 @@ ADMIN_HTML = """<!DOCTYPE html>
   td.em{{font-weight:600}}
   td.ts{{font-family:"Space Mono",ui-monospace,monospace;white-space:nowrap;color:#3a382f}}
   td.ip{{color:#6b675c;font-family:ui-monospace,monospace}}
-  td.ua{{color:#9a968b;font-size:12px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+  td.ua{{color:#9a968b;font-size:12px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+  td.nm{{font-weight:600}}
+  td.qt{{text-align:center;font-variant-numeric:tabular-nums;color:#3a382f}}
+  td.cd{{font-family:"Space Mono",ui-monospace,monospace;font-size:12px;color:var(--cobalt)}}
   td.empty{{text-align:center;color:#9a968b;padding:36px}}
   .foot{{color:#9a968b;font-size:12px;margin-top:16px}}
 </style></head><body>
@@ -285,7 +327,7 @@ ADMIN_HTML = """<!DOCTYPE html>
   </div>
   <div class="bar"><a class="btn" href="/admin/export.csv">Download CSV</a></div>
   <table>
-    <thead><tr><th>#</th><th>Email</th><th>Collected (UTC)</th><th>IP</th><th>User agent</th></tr></thead>
+    <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Qty</th><th>Code</th><th>Collected (UTC)</th><th>IP</th><th>User agent</th></tr></thead>
     <tbody>{rows}</tbody>
   </table>
   <div class="foot">Generated {generated}</div>
