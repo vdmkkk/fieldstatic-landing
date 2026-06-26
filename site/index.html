@@ -152,6 +152,32 @@
   .form-intro p{font-size:16.5px;line-height:1.6;color:var(--ink-soft);margin:22px 0 0;max-width:520px;}
   .showcase{margin:0;border:1.5px solid var(--ink);overflow:hidden;background:var(--ink);}
   .showcase img{width:100%;height:auto;display:block;}
+
+  /* inline brand mark */
+  .brand{font-family:"Archivo",sans-serif;font-weight:800;letter-spacing:.005em;color:var(--ink);}
+  .brand .a{color:var(--cobalt);}
+
+  /* carousel */
+  .carousel{position:relative;}
+  .carousel-viewport{overflow:hidden;}
+  .carousel-track{display:flex;will-change:transform;transition:transform .55s cubic-bezier(.4,0,.2,1);}
+  .carousel-track.no-anim{transition:none;}
+  .carousel-slide{flex:0 0 100%;min-width:0;}
+  .carousel-slide img{display:block;width:100%;height:auto;}
+  .carousel-arrow{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;
+    border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);cursor:pointer;padding:0;
+    display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;
+    opacity:0;transition:opacity .2s ease, background .15s ease;z-index:3;}
+  .carousel-arrow:hover{background:var(--lime);}
+  .carousel-arrow.prev{left:14px;}
+  .carousel-arrow.next{right:14px;}
+  .carousel:hover .carousel-arrow,.carousel:focus-within .carousel-arrow{opacity:1;}
+  @media (hover:none){.carousel-arrow{opacity:.92;}}
+  .carousel-dots{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:3;}
+  .carousel-dot{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--paper);background:rgba(22,21,15,.4);
+    cursor:pointer;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:background .15s;}
+  .carousel-dot.active{background:var(--lime);border-color:var(--lime);}
+  .carousel.single .carousel-arrow,.carousel.single .carousel-dots{display:none;}
   .works{margin-top:42px;text-align:center;}
   .works .lbl{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;}
   .tags{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
@@ -277,7 +303,7 @@
           </a>
         </figcaption>
       </figure>
-      <p class="lede reveal">Ticks are <em>pulled</em> in by the static charge your clothes already carry — Fieldstatic neutralizes it before they ever reach your skin.</p>
+      <p class="lede reveal">Ticks are <em>pulled</em> in by the static charge of your clothes — <span class="brand">Fieldst<span class="a">a</span>tic</span> prevents the build-up of a static charge.</p>
       <div class="cta-row reveal">
         <a class="btn btn-ink" href="/cart">Order now</a>
         <a class="scrolllink" href="#science">See the science ↓</a>
@@ -303,7 +329,7 @@
       <div class="reveal">
         <h2 class="lead-h">There's a gap between the grass and you. Ticks cross it.</h2>
       </div>
-      <p class="reveal">A 2023 <span class="src">University of Bristol study</span> confirmed that ticks exploit electrostatic fields to bridge the space between vegetation and a moving host — no crawling required. You've been defending against one mechanism. This is the other one.</p>
+      <p class="reveal">A 2023 study by the <span class="src">University of Bristol</span> found that ticks can use electrostatic forces to jump from plants onto passing animals or people — they don't even need to crawl. In other words, you've been defending against one way ticks attach to you, but there's another one too.</p>
     </div>
 
     <figure class="figure reveal">
@@ -331,12 +357,19 @@
   <div class="wrap form-stack">
     <div class="form-top">
       <div class="reveal form-intro">
-        <h2 class="lead-h">Your regular anti-static spray wasn't built for this.</h2>
-        <p>Generic anti-static products solve laundry. Fieldstatic solves tick exposure. Low-residue, odorless, safe around pets — designed to be applied once before you head out, not once a wash cycle.</p>
+        <h2 class="lead-h">It's not a repellent, it's a completely new way of protecting yourself</h2>
+        <p>Repellents work on contact — they deter ticks once they're already on you. <span class="brand">Fieldst<span class="a">a</span>tic</span> works before that: by neutralizing the static charge that attracts ticks in the first place, it removes the signal that pulls them toward you. Two different problems. Two different layers. Most people only know about one.</p>
       </div>
-      <figure class="showcase reveal">
-        <img src="assets/2a066a9e-1ff9-4e43-a861-b268c728cfee.png" alt="Hiker on a mountain trail holding a Fieldstatic Electro Shield bottle, with two more hikers ahead" />
-      </figure>
+      <div class="showcase carousel reveal" id="showcase">
+        <div class="carousel-viewport">
+          <div class="carousel-track" id="carTrack">
+            <div class="carousel-slide"><img src="assets/2a066a9e-1ff9-4e43-a861-b268c728cfee.png" loading="lazy" alt="Hiker on a mountain trail holding a Fieldstatic Electro Shield bottle, with two more hikers ahead" /></div>
+          </div>
+        </div>
+        <button class="carousel-arrow prev" type="button" aria-label="Previous slide">‹</button>
+        <button class="carousel-arrow next" type="button" aria-label="Next slide">›</button>
+        <div class="carousel-dots" id="carDots" aria-hidden="true"></div>
+      </div>
     </div>
     <div class="specs reveal">
       <div class="spec-head">
@@ -496,6 +529,74 @@
   showInView();
   /* last-resort: if scroll events never fire, reveal whatever remains after 2.5s */
   setTimeout(function(){ reveals.slice().forEach(reveal); reveals.length=0; }, 2500);
+
+  /* ---- mockup carousel: infinite loop, autoplay every 4s, arrows on hover.
+     Built to take more slides later — just add more .carousel-slide elements. */
+  (function(){
+    var car=document.getElementById('showcase');
+    if(!car) return;
+    var track=document.getElementById('carTrack');
+    var slides=[].slice.call(track.children);
+    var n=slides.length;
+    if(n<=1){ car.classList.add('single'); return; }   // nothing to scroll yet
+
+    // clone edges for a seamless infinite loop
+    var lastClone=slides[n-1].cloneNode(true), firstClone=slides[0].cloneNode(true);
+    lastClone.setAttribute('aria-hidden','true'); firstClone.setAttribute('aria-hidden','true');
+    track.insertBefore(lastClone, slides[0]);
+    track.appendChild(firstClone);
+
+    var index=1, dots=[];
+    function place(animate){
+      track.classList.toggle('no-anim', !animate);
+      track.style.transform='translateX('+(-index*100)+'%)';
+      if(!animate){ void track.offsetHeight; }         // settle the jump before next move
+    }
+    function real(){ return (index-1+n)%n; }
+    function syncDots(){ dots.forEach(function(d,i){ d.classList.toggle('active', i===real()); }); }
+    function go(i){ index=i; place(true); syncDots(); }
+    function next(){ go(index+1); }
+    function prev(){ go(index-1); }
+
+    track.addEventListener('transitionend', function(){
+      if(index===0){ index=n; place(false); }
+      else if(index===n+1){ index=1; place(false); }
+    });
+
+    var dotsWrap=document.getElementById('carDots');
+    if(dotsWrap){
+      dotsWrap.removeAttribute('aria-hidden');
+      for(var i=0;i<n;i++){
+        var d=document.createElement('button');
+        d.type='button'; d.className='carousel-dot';
+        d.setAttribute('aria-label','Go to slide '+(i+1));
+        (function(k){ d.addEventListener('click', function(){ go(k+1); kick(); }); })(i);
+        dotsWrap.appendChild(d); dots.push(d);
+      }
+    }
+    var aNext=car.querySelector('.carousel-arrow.next'), aPrev=car.querySelector('.carousel-arrow.prev');
+    if(aNext) aNext.addEventListener('click', function(){ next(); kick(); });
+    if(aPrev) aPrev.addEventListener('click', function(){ prev(); kick(); });
+
+    var timer=null;
+    function start(){ stop(); timer=setInterval(next, 4000); }
+    function stop(){ if(timer){ clearInterval(timer); timer=null; } }
+    function kick(){ start(); }                          // restart the clock after manual nav
+    car.addEventListener('mouseenter', stop);
+    car.addEventListener('mouseleave', start);
+    document.addEventListener('visibilitychange', function(){ document.hidden ? stop() : start(); });
+
+    var x0=null;                                         // touch swipe
+    track.addEventListener('touchstart', function(e){ x0=e.touches[0].clientX; stop(); }, {passive:true});
+    track.addEventListener('touchend', function(e){
+      if(x0==null) return;
+      var dx=e.changedTouches[0].clientX-x0;
+      if(Math.abs(dx)>40){ dx<0 ? next() : prev(); }
+      x0=null; start();
+    }, {passive:true});
+
+    place(false); syncDots(); start();
+  })();
 
 
   /* ---- cookie consent ----------------------------------------------------
