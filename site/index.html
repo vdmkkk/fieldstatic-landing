@@ -127,6 +127,12 @@
 
   .figure{margin:76px 0 0;}
   .figure img{display:block;width:100%;height:auto;}
+  .figure .comic-mobile{display:none;}
+  @media (max-width:720px){
+    .figure .comic-desktop{display:none;}
+    .figure .comic-mobile{display:block;}
+    .figure .comic-mobile + .comic-mobile{margin-top:16px;}
+  }
 
   /* science — the difference */
   .diff{display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:start;margin-top:60px;padding-top:44px;border-top:1.5px solid var(--ink);}
@@ -301,7 +307,9 @@
     </div>
 
     <figure class="figure reveal">
-      <img src="assets/comic-cut.png" alt="Four-panel diagram: ticks wait on grass, detect static charge, person sprays Fieldstatic, ticks are repelled by a neutralized field" />
+      <img class="comic-desktop" src="assets/comic-cut_new.png" loading="lazy" alt="Four-step diagram: 1) ticks wait on grass for a host, 2) a tick is attracted by static charge, 3) Fieldstatic is applied to clothes, 4) ticks can't leap onto the host" />
+      <img class="comic-mobile" src="assets/comic-cut_new_mobile_1.png" loading="lazy" alt="Step 1: ticks wait for the host to pass by. Step 2: a tick gets attracted by a static charge." />
+      <img class="comic-mobile" src="assets/comic-cut_new_mobile_2.png" loading="lazy" alt="Step 3: Fieldstatic is applied to clothes to prevent static charge buildup. Step 4: ticks are unable to leap onto a host." />
     </figure>
 
     <div class="diff reveal">
