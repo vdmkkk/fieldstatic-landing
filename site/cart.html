@@ -51,6 +51,7 @@
   .panel{border:1.5px solid var(--ink);background:var(--paper);min-width:0;display:flex;flex-direction:column;}
   .panel-h{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1.5px solid var(--ink);background:var(--paper-2);}
   .panel-h .step{font-family:"Space Mono",monospace;font-size:12px;font-weight:700;color:var(--cobalt);letter-spacing:.06em;}
+  .panel-h .step .nm{display:none;}
   .panel-h h2{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:.01em;margin:0;}
 
   /* contact form */
@@ -76,15 +77,19 @@
 
   /* order summary */
   .summary{position:sticky;top:92px;}
-  .li{display:grid;grid-template-columns:96px 1fr auto;gap:16px;padding:22px;border-bottom:1.5px dashed rgba(22,21,15,.2);}
-  .li-thumb{width:96px;height:108px;border:1.5px solid var(--ink);background:
+  .li{display:grid;grid-template-columns:auto 1fr;gap:16px;padding:22px;border-bottom:1.5px dashed rgba(22,21,15,.2);align-items:start;}
+  .li-thumb{width:90px;height:104px;flex:0 0 auto;border:1.5px solid var(--ink);background:
     radial-gradient(closest-side at 50% 38%, rgba(30,34,196,.12), transparent 72%), var(--paper-2);
     display:flex;align-items:center;justify-content:center;overflow:hidden;}
-  .li-thumb img{height:96px;width:auto;filter:drop-shadow(0 8px 10px rgba(22,21,15,.22));}
+  .li-thumb img{height:90px;width:auto;filter:drop-shadow(0 8px 10px rgba(22,21,15,.22));}
+  .li-main{min-width:0;}
+  .li-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+  .li-titles{min-width:0;}
   .li-name{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:800;font-size:18px;letter-spacing:-.01em;margin:2px 0 4px;}
-  .li-sub{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px;}
-  .li-unit{font-family:"Space Mono",monospace;font-size:12px;color:var(--ink-soft);}
-  .li-price{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:800;font-size:18px;white-space:nowrap;}
+  .li-sub{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);}
+  .li-price{text-align:right;flex:0 0 auto;}
+  .li-price #unitPrice{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:800;font-size:18px;white-space:nowrap;display:block;}
+  .li-unit{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);display:block;margin-top:3px;}
 
   /* quantity stepper */
   .qty{display:inline-flex;align-items:center;border:1.5px solid var(--ink);border-radius:999px;overflow:hidden;background:#fff;}
@@ -127,13 +132,14 @@
     .checkout{grid-template-columns:1fr;gap:22px;}
     .summary{position:static;order:-1;}
     .foot-top{grid-template-columns:1fr 1fr;}
+    /* show contents of cart first, contact second — renumber to match */
+    .panel-h .step .nd{display:none;}
+    .panel-h .step .nm{display:inline;}
   }
   @media (max-width:560px){
     .wrap{padding:0 20px;}
     .navrow{padding:14px 20px;}
     .steps .lbl{display:none;}
-    .li{grid-template-columns:74px 1fr;}
-    .li-price{grid-column:2;justify-self:start;}
     .foot-top{grid-template-columns:1fr;}
   }
 </style>
@@ -161,7 +167,7 @@
   <div class="checkout">
     <!-- LEFT: contact info -->
     <section class="panel">
-      <div class="panel-h"><span class="step">01</span><h2>Your details</h2></div>
+      <div class="panel-h"><span class="step"><span class="nd">01</span><span class="nm">02</span></span><h2>Your details</h2></div>
       <form class="form-body" id="cartForm" novalidate>
         <div class="field">
           <label for="cName">Full name</label>
@@ -178,21 +184,22 @@
 
     <!-- RIGHT: order summary -->
     <aside class="panel summary">
-      <div class="panel-h"><span class="step">02</span><h2>Your order</h2></div>
+      <div class="panel-h"><span class="step"><span class="nd">02</span><span class="nm">01</span></span><h2>Your order</h2></div>
       <div class="li">
         <div class="li-thumb"><img src="assets/bottle-cut.png" alt="Fieldstatic Electro Shield tick defense spray bottle" /></div>
-        <div class="li-info">
-          <div class="li-name">Electro Shield</div>
-          <div class="li-sub">Tick Defense Spray · 6 fl oz</div>
+        <div class="li-main">
+          <div class="li-head">
+            <div class="li-titles">
+              <div class="li-name">Electro Shield</div>
+              <div class="li-sub">Tick Defense Spray · 6 fl oz</div>
+            </div>
+            <div class="li-price"><span id="unitPrice">$19.99</span><span class="li-unit">each</span></div>
+          </div>
           <div class="qty" role="group" aria-label="Quantity">
             <button class="qbtn" type="button" id="qMinus" data-dir="-1" aria-label="Decrease quantity">−</button>
             <input class="qnum mono" id="qnum" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Quantity" />
             <button class="qbtn" type="button" id="qPlus" data-dir="1" aria-label="Increase quantity">+</button>
           </div>
-        </div>
-        <div class="li-price">
-          <span id="unitPrice">$19.99</span>
-          <div class="li-unit">each</div>
         </div>
       </div>
       <div class="totals">
