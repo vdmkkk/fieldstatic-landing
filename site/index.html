@@ -68,6 +68,30 @@
   .hero .cta-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
   .hero .scrolllink{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;border-bottom:1.5px solid var(--ink);padding-bottom:2px;}
 
+  /* ---------- hero citation pull-quote ---------- */
+  .hero-kicker{display:inline-block;margin:0 0 14px;}
+  .pullquote{margin:0;position:relative;}
+  .bigq{display:block;font-family:Georgia,"Times New Roman",serif;font-weight:700;
+    font-size:clamp(74px,10vw,124px);line-height:.6;color:var(--lime);
+    -webkit-text-stroke:3px var(--ink);margin:0 0 -6px -4px;}
+  .hero-quote{margin:0;font-weight:800;font-size:clamp(40px,5.9vw,76px);line-height:1.0;letter-spacing:-.022em;}
+  .hero-quote .closeq{font-family:Georgia,"Times New Roman",serif;color:var(--cobalt);margin-left:.02em;}
+  .hl{-webkit-box-decoration-break:clone;box-decoration-break:clone;padding:.02em .14em;border-radius:3px;
+    background:linear-gradient(101deg, rgba(201,240,59,.65) 0%, var(--lime) 5%, var(--lime-hi) 95%, rgba(201,240,59,.5) 100%);}
+  .cite{margin-top:28px;}
+  .cite-card{display:inline-flex;flex-direction:column;gap:5px;max-width:100%;text-decoration:none;
+    background:var(--paper);border:1.5px solid var(--ink);border-left:6px solid var(--cobalt);
+    padding:13px 20px 14px;transform:rotate(-1deg);transform-origin:left center;
+    transition:transform .2s ease, box-shadow .2s ease, border-left-color .2s ease;
+    box-shadow:0 0 0 rgba(22,21,15,0);}
+  .cite-card:hover,.cite-card:focus-visible{transform:translateY(-2px) rotate(0deg);box-shadow:6px 7px 0 var(--ink);border-left-color:var(--lime);outline:none;}
+  .cite-pub{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:17px;letter-spacing:.01em;color:var(--ink);line-height:1.1;}
+  .cite-line{display:flex;align-items:center;gap:11px;flex-wrap:wrap;}
+  .cite-meta{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);}
+  .cite-dot{width:4px;height:4px;background:var(--ink-soft);border-radius:50%;opacity:.55;flex:0 0 auto;}
+  .cite-go{font-family:"Space Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--cobalt);white-space:nowrap;}
+  .cite-card:hover .cite-go,.cite-card:focus-visible .cite-go{text-decoration:underline;text-underline-offset:3px;}
+
   .stage{position:relative;height:100%;min-height:520px;display:flex;align-items:center;justify-content:center;}
   .stage .glow{position:absolute;inset:0;background:radial-gradient(closest-side at 52% 46%, rgba(30,34,196,.10), transparent 70%);}
   .bottle{position:relative;z-index:3;height:min(70vh,640px);filter:drop-shadow(0 26px 34px rgba(22,21,15,.22));animation:bob 6s ease-in-out infinite;}
@@ -250,8 +274,22 @@
 <section class="hero" data-screen-label="Hero">
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <span class="chip reveal">Next-gen vector protection ↗</span>
-      <h1 class="disp reveal" style="margin-top:24px;">Ticks don't<br>wait for<br>contact.</h1>
+      <span class="eyebrow hero-kicker reveal">Don't take our word for it</span>
+      <figure class="pullquote reveal">
+        <h1 class="hero-quote disp">
+          <span class="bigq" aria-hidden="true">“</span>You really are a <span class="hl">tick&nbsp;magnet</span><span class="closeq" aria-hidden="true">”</span>
+        </h1>
+        <figcaption class="cite">
+          <a class="cite-card" href="https://www.nytimes.com/2023/06/30/science/ticks-static-electricity.html" target="_blank" rel="noopener noreferrer" aria-label="Read the original New York Times article — You really are a tick magnet (opens in a new tab)">
+            <span class="cite-pub">The New York Times</span>
+            <span class="cite-line">
+              <span class="cite-meta">Science · June 30, 2023</span>
+              <span class="cite-dot" aria-hidden="true"></span>
+              <span class="cite-go">Read the article ↗</span>
+            </span>
+          </a>
+        </figcaption>
+      </figure>
       <p class="lede reveal">Ticks are <em>pulled</em> in by the static charge your clothes already carry — Fieldstatic neutralizes it before they ever reach your skin.</p>
       <div class="cta-row reveal">
         <button class="btn btn-ink" data-order>Order now</button>
