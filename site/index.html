@@ -241,6 +241,7 @@
   /* responsive */
   @media (max-width:900px){
     .hero-grid{grid-template-columns:1fr;min-height:auto;gap:8px;}
+    .marquee{margin-top:120px;} /* mobile: gap above the lime line mirrors the gap below it (to the next section's heading) */
     .stage{order:-1;min-height:420px;}
     .bottle{height:54vh;}
     .sci-head,.diff{grid-template-columns:1fr;gap:26px;}
@@ -492,13 +493,21 @@
     });
   }
 
-  /* marquee */
+  /* marquee — build ONE "unit" that's at least as wide as the screen, then
+     clone it once. The track scrolls 0 → -50% (exactly one unit width), so two
+     identical units loop seamlessly with no empty gap / ugly restart at any
+     viewport. Duration scales with width to keep the scroll speed constant. */
   var mt=document.getElementById('mtrack');
   if(mt){
     var items=['Electrostatic defense','Invisible dry barrier','Gear-safe formula','Not DEET','Odorless','Pet-safe','Apply once · go outside'];
-    var unit=document.createElement('span');
-    items.forEach(function(t){ unit.appendChild(document.createTextNode(t)); var i=document.createElement('i'); i.textContent='✦'; unit.appendChild(i); });
-    mt.appendChild(unit); mt.appendChild(unit.cloneNode(true));
+    var addItems=function(span){ items.forEach(function(t){ span.appendChild(document.createTextNode(t)); var i=document.createElement('i'); i.textContent='✦'; span.appendChild(i); }); };
+    var unit=document.createElement('span'); addItems(unit); mt.appendChild(unit);
+    var need=Math.max(window.innerWidth,(window.screen&&window.screen.width)||0)+40;
+    var guard=0;
+    while(unit.getBoundingClientRect().width<need&&guard<24){ addItems(unit); guard++; }
+    var SPEED=46; /* px per second — matches the original feel */
+    mt.style.animationDuration=Math.max(18,unit.getBoundingClientRect().width/SPEED).toFixed(1)+'s';
+    mt.appendChild(unit.cloneNode(true));
   }
 
   /* reveal on scroll (scroll/load driven, with a hard fallback for preview
