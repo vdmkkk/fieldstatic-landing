@@ -1,10 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <path d="M12 9 H52 A3 3 0 0 1 55 12 V33 C55 45 45 52 32 57 C19 52 9 45 9 33 V12 A3 3 0 0 1 12 9 Z"
-        fill="#C9F03B" stroke="#16150F" stroke-width="3" stroke-linejoin="round"/>
-  <g fill="none" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M23 43 L32 19 L41 43" stroke="#16150F" stroke-width="7"/>
-    <path d="M26 35 H38" stroke="#16150F" stroke-width="6.5"/>
-    <path d="M23 43 L32 19 L41 43" stroke="#ffffff" stroke-width="4"/>
-    <path d="M26 35 H38" stroke="#ffffff" stroke-width="3.4"/>
-  </g>
+  <rect width="64" height="64" rx="14" fill="#16150F"/>
+  <text x="32" y="33" text-anchor="middle" dominant-baseline="central"
+        font-family="Archivo, 'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+        font-weight="800" font-size="46" letter-spacing="0" fill="#C9F03B">A</text>
 </svg>
