@@ -21,7 +21,9 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);
-    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;
+    min-height:100vh;display:flex;flex-direction:column;}
+  .page{flex:1 0 auto;}
   .disp{font-family:"Archivo Expanded","Archivo",sans-serif;}
   .mono{font-family:"Space Mono",monospace;}
   a{color:inherit;}
@@ -105,15 +107,26 @@
   .ship-note{display:flex;gap:10px;align-items:flex-start;margin-top:16px;padding:12px 14px;border:1px dashed rgba(22,21,15,.3);border-radius:8px;}
   .ship-note .mono{font-family:"Space Mono",monospace;font-size:11px;line-height:1.5;color:var(--ink-soft);}
 
-  /* footer */
-  footer{background:var(--ink);color:var(--paper);}
-  .foot-bot{max-width:var(--maxw);margin:0 auto;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;}
-  .foot-bot .mono,.foot-bot a{font-family:"Space Mono",monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(243,239,229,.55);text-decoration:none;}
-  .foot-bot a:hover{color:var(--lime);}
+  /* footer (shared with home) */
+  footer{background:var(--ink);color:var(--paper);flex-shrink:0;}
+  .foot-top{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:32px;padding:64px 0 44px;}
+  .foot-brand .wm{color:var(--paper);}
+  .foot-brand .wm .a{color:var(--lime);}
+  .foot-brand p{margin:18px 0 0;font-size:15px;line-height:1.55;color:rgba(243,239,229,.66);max-width:32ch;}
+  .foot-col h4{font-family:"Space Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(243,239,229,.5);margin:0 0 16px;}
+  .foot-col a{display:block;text-decoration:none;font-size:14.5px;padding:6px 0;color:rgba(243,239,229,.86);}
+  .foot-col a:hover{color:var(--lime);}
+  .foot-note{border:1px dashed rgba(243,239,229,.28);border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-top:8px;}
+  .foot-note .mono{font-size:12px;letter-spacing:.04em;color:rgba(243,239,229,.78);line-height:1.5;}
+  .foot-bot{border-top:1px solid rgba(243,239,229,.16);display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 0;flex-wrap:wrap;}
+  .foot-bot .mono{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(243,239,229,.55);}
+  .foot-bot a.mono{text-decoration:none;transition:color .15s;}
+  .foot-bot a.mono:hover{color:var(--lime);}
 
   @media (max-width:860px){
     .checkout{grid-template-columns:1fr;gap:22px;}
     .summary{position:static;order:-1;}
+    .foot-top{grid-template-columns:1fr 1fr;}
   }
   @media (max-width:560px){
     .wrap{padding:0 20px;}
@@ -121,6 +134,7 @@
     .steps .lbl{display:none;}
     .li{grid-template-columns:74px 1fr;}
     .li-price{grid-column:2;justify-self:start;}
+    .foot-top{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -137,6 +151,7 @@
   </div>
 </header>
 
+<main class="page">
 <div class="wrap">
   <div class="cart-head">
     <div class="eyebrow">Checkout · Batch No. 002</div>
@@ -192,11 +207,40 @@
     </aside>
   </div>
 </div>
+</main>
 
 <footer>
-  <div class="foot-bot">
-    <span class="mono">© 2026 Fieldstatic — 6 fl oz of confidence.</span>
-    <a href="/">← Back to fieldstatic.shop</a>
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <div class="wm">FIELDST<span class="a">A</span>TIC<sup>™</sup></div>
+        <p>Made for people who'd rather be outside. A different layer of tick defense — no DEET, no drama.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="/#science">The science</a>
+        <a href="/#formula">The formula</a>
+        <a href="/cart">Order</a>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="mailto:hello@fieldstatic.co">Contact</a>
+        <a href="#">Stockists</a>
+        <a href="/privacy.html">Privacy Policy</a>
+      </div>
+      <div class="foot-col">
+        <h4>Assembly</h4>
+        <div class="foot-note">
+          <span class="mono">No allen key required. Step 1: spray. Step 2: go outside. There is no step 3.</span>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span class="mono">© 2026 Fieldstatic — 6 fl oz of confidence.</span>
+      <a class="mono" href="/privacy.html">Privacy Policy</a>
+      <span class="mono">Not DEET · Not a repellent · A different layer</span>
+    </div>
   </div>
 </footer>
 

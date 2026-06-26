@@ -21,7 +21,9 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);
-    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;
+    min-height:100vh;display:flex;flex-direction:column;}
+  .page{flex:1 0 auto;}
   .disp{font-family:"Archivo Expanded","Archivo",sans-serif;}
   .mono{font-family:"Space Mono",monospace;}
   a{color:inherit;}
@@ -66,20 +68,12 @@
   .perk-l .k{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);margin-bottom:4px;}
   .perk-l .v{font-family:"Archivo Expanded","Archivo",sans-serif;font-weight:800;font-size:22px;line-height:1.05;}
   .perk-l .v small{font-weight:700;font-size:13px;color:rgba(243,239,229,.7);font-family:"Space Mono",monospace;display:block;margin-top:5px;letter-spacing:.02em;}
-  .code{display:inline-flex;align-items:center;gap:0;border:1.5px dashed var(--lime);border-radius:10px;overflow:hidden;background:rgba(201,240,59,.08);}
-  .code .val{font-family:"Space Mono",monospace;font-weight:700;font-size:17px;letter-spacing:.12em;color:var(--lime);padding:11px 16px;}
-  .code .cp{align-self:stretch;border:none;border-left:1.5px dashed var(--lime);background:transparent;color:var(--paper);
-    cursor:pointer;font-family:"Space Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:0 14px;transition:background .15s,color .15s;}
-  .code .cp:hover{background:var(--lime);color:var(--ink);}
-  .perk-note{display:none;font-family:"Space Mono",monospace;font-size:12px;line-height:1.5;color:rgba(243,239,229,.78);max-width:30ch;}
-
   .actions{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:30px;}
   .btn{display:inline-flex;align-items:center;gap:10px;cursor:pointer;border:none;white-space:nowrap;text-decoration:none;
     font-family:"Archivo",sans-serif;font-weight:800;font-size:15px;letter-spacing:.01em;border-radius:999px;padding:15px 28px;transition:transform .14s ease, background .18s ease;}
   .btn:active{transform:translateY(1px);}
   .btn-ink{background:var(--ink);color:var(--paper);}
   .btn-ink:hover{background:var(--cobalt);}
-  .backlink{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;border-bottom:1.5px solid var(--ink);padding-bottom:2px;}
 
   /* art */
   .so-art{border:1.5px solid var(--ink);background:#fff;overflow:hidden;}
@@ -87,20 +81,32 @@
   .so-art .cap{border-top:1.5px solid var(--ink);background:var(--paper-2);padding:11px 16px;
     font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);text-align:center;}
 
-  /* footer */
-  footer{background:var(--ink);color:var(--paper);}
-  .foot-bot{max-width:var(--maxw);margin:0 auto;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;}
-  .foot-bot .mono,.foot-bot a{font-family:"Space Mono",monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(243,239,229,.55);text-decoration:none;}
-  .foot-bot a:hover{color:var(--lime);}
+  /* footer (shared with home) */
+  footer{background:var(--ink);color:var(--paper);flex-shrink:0;}
+  .foot-top{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:32px;padding:64px 0 44px;}
+  .foot-brand .wm{color:var(--paper);}
+  .foot-brand .wm .a{color:var(--lime);}
+  .foot-brand p{margin:18px 0 0;font-size:15px;line-height:1.55;color:rgba(243,239,229,.66);max-width:32ch;}
+  .foot-col h4{font-family:"Space Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(243,239,229,.5);margin:0 0 16px;}
+  .foot-col a{display:block;text-decoration:none;font-size:14.5px;padding:6px 0;color:rgba(243,239,229,.86);}
+  .foot-col a:hover{color:var(--lime);}
+  .foot-note{border:1px dashed rgba(243,239,229,.28);border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-top:8px;}
+  .foot-note .mono{font-size:12px;letter-spacing:.04em;color:rgba(243,239,229,.78);line-height:1.5;}
+  .foot-bot{border-top:1px solid rgba(243,239,229,.16);display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 0;flex-wrap:wrap;}
+  .foot-bot .mono{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(243,239,229,.55);}
+  .foot-bot a.mono{text-decoration:none;transition:color .15s;}
+  .foot-bot a.mono:hover{color:var(--lime);}
 
   @media (max-width:880px){
     .so{grid-template-columns:1fr;gap:30px;padding:36px 0 60px;}
     .so-art{order:-1;max-width:460px;}
+    .foot-top{grid-template-columns:1fr 1fr;}
   }
   @media (max-width:560px){
     .wrap{padding:0 20px;}
     .navrow{padding:14px 20px;}
     .perk{flex-direction:column;align-items:flex-start;gap:14px;}
+    .foot-top{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -109,18 +115,18 @@
 <header class="nav">
   <div class="navrow">
     <a class="wm" href="/">FIELDST<span class="a">A</span>TIC<sup>™</sup></a>
-    <span class="navtag">Order · Batch No. 001</span>
   </div>
 </header>
 
+<main class="page">
 <div class="wrap">
   <div class="so">
     <div class="so-copy">
       <span class="so-eyebrow"><span class="dot"></span> Sold out — for now</span>
       <p class="greet" id="greet">Thanks, <span id="greetName"></span> — here's the situation.</p>
       <h1 class="disp">Batch No. 001 is <span class="hl">gone.</span></h1>
-      <p class="lede">We are genuinely, hand-on-heart sorry to leave you waiting. Our very first run of Fieldstatic emptied the shelves faster than anyone here dared to predict — a good problem, the kind that keeps the mixing tanks running through the night, but a problem for <em>you</em> right now, and we don't take that lightly.</p>
-      <p class="lede">So here's exactly where things stand — no forms, nothing else for you to do:</p>
+      <p class="lede">We're sorry to leave you waiting. Our first batch sold out sooner than we expected, and the next one isn't ready quite yet — so we can't get a bottle to you today, and we know that's a letdown.</p>
+      <p class="lede">Here's where things stand — there's nothing else you need to do:</p>
 
       <div class="conf">
         <div class="conf-row">
@@ -141,19 +147,13 @@
 
       <div class="perk" id="perk">
         <div class="perk-l">
-          <div class="k">Your waitlist thank-you</div>
-          <div class="v">10% off your first order<small>For getting here early — applied when we reopen.</small></div>
+          <div class="k">A thank-you for waiting</div>
+          <div class="v">10% off your first order<small>Tied to your email and applied automatically when we reopen — there's nothing to enter.</small></div>
         </div>
-        <div class="code" id="codeBox">
-          <span class="val" id="codeVal">FS-XXXXXX</span>
-          <button class="cp" id="copyBtn" type="button">Copy</button>
-        </div>
-        <p class="perk-note" id="perkNote">Your 10% is locked to your email — we'll include it when we get in touch.</p>
       </div>
 
       <div class="actions">
         <a class="btn btn-ink" href="/">Back to fieldstatic.shop</a>
-        <a class="backlink" href="/#science">Re-read the science ↓</a>
       </div>
     </div>
 
@@ -163,11 +163,40 @@
     </figure>
   </div>
 </div>
+</main>
 
 <footer>
-  <div class="foot-bot">
-    <span class="mono">© 2026 Fieldstatic — suffering from success.</span>
-    <a href="/">← Back to fieldstatic.shop</a>
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <div class="wm">FIELDST<span class="a">A</span>TIC<sup>™</sup></div>
+        <p>Made for people who'd rather be outside. A different layer of tick defense — no DEET, no drama.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="/#science">The science</a>
+        <a href="/#formula">The formula</a>
+        <a href="/cart">Order</a>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="mailto:hello@fieldstatic.co">Contact</a>
+        <a href="#">Stockists</a>
+        <a href="/privacy.html">Privacy Policy</a>
+      </div>
+      <div class="foot-col">
+        <h4>Assembly</h4>
+        <div class="foot-note">
+          <span class="mono">No allen key required. Step 1: spray. Step 2: go outside. There is no step 3.</span>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span class="mono">© 2026 Fieldstatic — 6 fl oz of confidence.</span>
+      <a class="mono" href="/privacy.html">Privacy Policy</a>
+      <span class="mono">Not DEET · Not a repellent · A different layer</span>
+    </div>
   </div>
 </footer>
 
@@ -178,38 +207,15 @@
 
   var firstName=(data.name?(''+data.name).trim().split(/\s+/)[0]:'');
   var email=(data.email?(''+data.email).trim():'');
-  var code=(data.code?(''+data.code).trim():'');
 
   // personalize greeting
   if(firstName){
-    var gn=document.getElementById('greetName');
-    gn.textContent=firstName.replace(/</g,'');
+    document.getElementById('greetName').textContent=firstName.replace(/</g,'');
     document.getElementById('greet').style.display='block';
   }
   // confirm which email is saved
   if(email){
     document.getElementById('confEmail').textContent='we saved '+email.replace(/</g,'');
-  }
-
-  // discount code: show the real code if we have it, otherwise an email-locked note
-  if(code){
-    document.getElementById('codeVal').textContent=code;
-    var copyBtn=document.getElementById('copyBtn');
-    copyBtn.addEventListener('click', function(){
-      var done=function(){ copyBtn.textContent='Copied ✓'; setTimeout(function(){ copyBtn.textContent='Copy'; },1800); };
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(code).then(done, done);
-      } else {
-        var r=document.createRange(); r.selectNode(document.getElementById('codeVal'));
-        var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
-        try{ document.execCommand('copy'); }catch(_){}
-        sel.removeAllRanges(); done();
-      }
-    });
-  } else {
-    // no code in session (e.g. opened directly) — show the locked-to-email note instead
-    document.getElementById('codeBox').style.display='none';
-    document.getElementById('perkNote').style.display='block';
   }
 })();
 </script>
