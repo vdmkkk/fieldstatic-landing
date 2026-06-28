@@ -145,7 +145,14 @@
     .steps .lbl{display:none;}
     .foot-top{grid-template-columns:1fr;}
   }
+
+  /* hide prices until the A/B variant resolves, so visitors never see a flash
+     of the default price switch to their test price */
+  body.price-pending #unitPrice,
+  body.price-pending #subtotal,
+  body.price-pending #total{visibility:hidden;}
 </style>
+<script src="/analytics.js"></script>
 </head>
 <body>
 
@@ -196,7 +203,7 @@
               <div class="li-name">Electro Shield</div>
               <div class="li-sub">Tick Defense Spray · 6 fl oz</div>
             </div>
-            <div class="li-price"><span id="unitPrice">$19.99</span><span class="li-unit">each</span></div>
+            <div class="li-price"><span id="unitPrice">$14.99</span><span class="li-unit">each</span></div>
           </div>
           <div class="qty" role="group" aria-label="Quantity">
             <button class="qbtn" type="button" id="qMinus" data-dir="-1" aria-label="Decrease quantity">−</button>
@@ -206,9 +213,9 @@
         </div>
       </div>
       <div class="totals">
-        <div class="trow"><span class="k">Subtotal</span><span class="v" id="subtotal">$19.99</span></div>
+        <div class="trow"><span class="k">Subtotal</span><span class="v" id="subtotal">$14.99</span></div>
         <div class="trow muted"><span class="k">Shipping</span><span class="v">Calculated next step</span></div>
-        <div class="trow total"><span class="k">Total</span><span class="v" id="total">$19.99</span></div>
+        <div class="trow total"><span class="k">Total</span><span class="v" id="total">$14.99</span></div>
         <div class="ship-note">
           <span class="mono">Static-safe packaging. Free shipping over $40. Taxes &amp; delivery shown before you ever confirm.</span>
         </div>
@@ -255,11 +262,12 @@
 
 <script>
 (function(){
-  var UNIT=19.99;
+  var UNIT=14.99;
   var qnum=document.getElementById('qnum');
   var minus=document.getElementById('qMinus');
   var sub=document.getElementById('subtotal');
   var tot=document.getElementById('total');
+  var unitEl=document.getElementById('unitPrice');
 
   function money(n){ return '$'+n.toFixed(2); }
   function clampQty(v){ v=parseInt(v,10); if(isNaN(v)||v<1) v=1; if(v>99) v=99; return v; }
@@ -267,9 +275,19 @@
     var q=clampQty(qnum.value);
     qnum.value=q;
     minus.disabled=(q<=1);
+    unitEl.textContent=money(UNIT);
     var amount=money(UNIT*q);
     sub.textContent=amount;
     tot.textContent=amount;
+  }
+
+  // A/B price test: take the unit price from the resolved variant, then reveal.
+  if(window.fsOnPrice){
+    document.body.classList.add('price-pending');
+    window.fsOnPrice(function(p){
+      UNIT=p.unit; render();
+      document.body.classList.remove('price-pending');
+    });
   }
   [minus, document.getElementById('qPlus')].forEach(function(b){
     b.addEventListener('click', function(){
@@ -302,6 +320,9 @@
     if(!name){ return fail(nameI, 'Please enter your name so we know who to reach.'); }
     if(!EMAIL.test(email)){ return fail(emailI, 'Please enter a valid email address.'); }
     var q=clampQty(qnum.value);
+    var variant=(window.fsPrice && window.fsPrice.variant) || 'control';
+    var unit=(window.fsPrice && window.fsPrice.unit) || UNIT;
+    var value=+(unit*q).toFixed(2);
 
     btn.disabled=true;
     var label=btn.textContent;
@@ -310,15 +331,19 @@
     fetch('/api/subscribe', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email:email, name:name, quantity:q})
+      body:JSON.stringify({email:email, name:name, quantity:q, price_variant:variant, unit_price:unit})
     }).then(function(r){
       return r.json().catch(function(){return {};}).then(function(d){
         if(r.ok && d && d.ok){
           try{
             sessionStorage.setItem('fs_order', JSON.stringify({
-              name:name, email:email, quantity:q, code:(d.code||'')
+              name:name, email:email, quantity:q, code:(d.code||''),
+              price_variant:variant, unit_price:unit, value:value
             }));
           }catch(_){}
+          if(window.fsTrack){ window.fsTrack('subscribe_submitted', {
+            quantity:q, price_variant:variant, unit_price:unit, value:value, currency:'USD'
+          }); }
           window.location.href='/sold-out';
         } else {
           btn.disabled=false; btn.textContent=label;

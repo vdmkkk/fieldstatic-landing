@@ -1,0 +1,26 @@
+# Caddy edge for the fieldstatic VPS. Auto-provisions Let's Encrypt certs.
+{
+	email hello@fieldstatic.co
+	# Pin to LE production: ZeroSSL's API errors from this host, and we never
+	# want the untrusted staging CA.
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+}
+
+# canonical host
+fieldstatic.shop {
+	encode zstd gzip
+	reverse_proxy site:8080
+}
+
+# www -> apex
+www.fieldstatic.shop {
+	redir https://fieldstatic.shop{uri} permanent
+}
+
+# PostHog self-hosted analytics — TLS terminated here, forwarded as plain HTTP
+# to the PostHog stack's internal Caddy (alias `posthog-proxy` on the edge net),
+# which handles PostHog's own path routing (capture / replay / web).
+ph.fieldstatic.shop {
+	encode zstd gzip
+	reverse_proxy posthog-proxy:80
+}

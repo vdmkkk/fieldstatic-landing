@@ -112,6 +112,7 @@
     .foot-top{grid-template-columns:1fr;}
   }
 </style>
+<script src="/analytics.js"></script>
 </head>
 <body>
 
@@ -219,6 +220,17 @@
   // confirm which email is saved
   if(email){
     document.getElementById('confEmail').textContent='we saved '+email.replace(/</g,'');
+  }
+
+  // funnel completion — the visitor reached the confirmation page
+  if(window.fsTrack && (email || data.code)){
+    window.fsTrack('order_confirmed', {
+      price_variant: data.price_variant || 'control',
+      unit_price: (data.unit_price != null ? data.unit_price : null),
+      value: (data.value != null ? data.value : null),
+      quantity: data.quantity || 1,
+      currency: 'USD'
+    });
   }
 })();
 </script>

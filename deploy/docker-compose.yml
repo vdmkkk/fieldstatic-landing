@@ -1,0 +1,45 @@
+# Single-box deployment for the dedicated fieldstatic VPS (147.45.249.235).
+# Caddy is the TLS-terminating edge (auto Let's Encrypt) in front of the
+# stdlib Python site container. PostHog (added later) gets its own service +
+# a ph.fieldstatic.shop block in the Caddyfile.
+#
+#   cd /root/fieldstatic && docker compose up -d --build
+#
+# ADMIN_PASS is read from /root/fieldstatic/.env (gitignored, not in this repo).
+
+services:
+  site:
+    build: .
+    image: fieldstatic-site:latest
+    restart: unless-stopped
+    environment:
+      ADMIN_USER: fieldstatic
+      ADMIN_PASS: ${ADMIN_PASS:?set ADMIN_PASS in .env}
+    volumes:
+      - ./data:/data           # isolated SQLite waitlist DB, persists across rebuilds
+    expose:
+      - "8080"
+    networks: [web]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data       # ACME certs + keys (don't lose this)
+      - caddy_config:/config
+    depends_on: [site]
+    networks: [web, edge]      # edge = shared with the PostHog stack's internal proxy
+
+networks:
+  web:
+  edge:
+    external: true
+    name: edge
+
+volumes:
+  caddy_data:
+  caddy_config:
