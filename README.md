@@ -29,10 +29,14 @@ the signup itself.
 Two variants (both styled to match the site design tokens / the `/sold-out` page):
 
 - **First signup** — "Thanks for joining the waitlist": the sorry-we-sold-out
-  apology, what happens next, and the **10% off** perk with their code.
+  apology, what happens next, and the **10% off** perk (no code shown — like
+  `/sold-out`, the discount is tied to the email and applied when the batch
+  reopens; nothing for the customer to enter).
 - **Repeat signup** (same address already in the DB) — a lighter "We love the
-  enthusiasm ;) you're already on the list, please be patient" note. The repeat
-  reuses the original perk code so it stays stable across emails.
+  enthusiasm ;) you're already on the list, please be patient" note.
+
+No per-signup discount code is generated or stored (the discount is implied by
+being on the list); `discount_code` stays NULL for new rows.
 
 Configured entirely through environment variables (see `deploy/.env.example`):
 
