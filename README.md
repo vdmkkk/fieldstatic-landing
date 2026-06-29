@@ -10,13 +10,56 @@ and a password-protected admin dashboard.
 - `server/app.py` — dependency-free Python (stdlib only) service: serves the
   static site, stores submitted emails in SQLite, and renders the admin
   dashboard. Endpoints:
-  - `POST /api/subscribe` — `{ "email": "..." }`, stores email + UTC timestamp + IP + user agent.
+  - `POST /api/subscribe` — `{ "email": "..." }`, stores email + UTC timestamp + IP + user agent,
+    then emails a confirmation (see **Waitlist confirmation email** below).
   - `GET /admin` — HTTP Basic Auth dashboard (newest first, counts, CSV link).
   - `GET /admin/export.csv` — CSV export.
   - `GET /healthz` — health probe.
 - `Dockerfile` — builds the service image (`python:3.12-alpine`).
 - `deploy/fieldstatic-nginx-block.conf` — the nginx server blocks appended to
   the host's edge proxy config for `fieldstatic.shop`.
+
+## Waitlist confirmation email
+
+Every successful `POST /api/subscribe` triggers a confirmation email, sent over
+SMTP using only the Python stdlib (`smtplib` + `email`). It's dispatched on a
+background thread, so a slow or failing mail server never blocks — or fails —
+the signup itself.
+
+Two variants (both styled to match the site design tokens / the `/sold-out` page):
+
+- **First signup** — "Thanks for joining the waitlist": the sorry-we-sold-out
+  apology, what happens next, and the **10% off** perk with their code.
+- **Repeat signup** (same address already in the DB) — a lighter "We love the
+  enthusiasm ;) you're already on the list, please be patient" note. The repeat
+  reuses the original perk code so it stays stable across emails.
+
+Configured entirely through environment variables (see `deploy/.env.example`):
+
+| Var | Default | Notes |
+|-----|---------|-------|
+| `SMTP_HOST` | `smtp.timeweb.ru` | mail host |
+| `SMTP_PORT` | `465` | implicit TLS (`SMTP_SSL`) |
+| `SMTP_USER` | — | mailbox login; **blank disables email** |
+| `SMTP_PASS` | — | mailbox password; **blank disables email** |
+| `SMTP_FROM` | = `SMTP_USER` | From address |
+| `SMTP_FROM_NAME` | `Fieldstatic` | From display name |
+| `SITE_URL` | `https://fieldstatic.shop` | used for links in the email |
+
+If `SMTP_USER`/`SMTP_PASS` are unset the feature self-disables and the site still
+serves and collects signups normally. Secrets live in `.env` on the server
+(gitignored) — never committed.
+
+Local helpers (no server needed):
+
+```sh
+python server/app.py --preview .            # write email-preview-{welcome,repeat}.html
+python server/app.py --send-test you@x.com  # send a live welcome test (needs SMTP_* set)
+python server/app.py --send-test you@x.com repeat   # send the repeat variant
+```
+
+> Deliverability: make sure SPF (and ideally DKIM) for `fieldstatic.shop` are set
+> up in the Timeweb mail panel, or some inboxes will spam-folder the mail.
 
 ## Production deployment (server 5.42.110.221)
 

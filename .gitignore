@@ -2,3 +2,6 @@
 deploy/.admin_pass_local
 data/
 __pycache__/
+.env
+deploy/.env
+email-preview-*.html

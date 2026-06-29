@@ -22,9 +22,13 @@ import mimetypes
 import os
 import re
 import secrets
+import smtplib
 import sqlite3
+import ssl
 import threading
 from datetime import datetime, timezone
+from email.message import EmailMessage
+from email.utils import formataddr
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 STATIC_DIR = os.environ.get("STATIC_DIR", "/app/site")
@@ -32,6 +36,16 @@ DB_PATH = os.environ.get("DB_PATH", "/data/waitlist.db")
 PORT = int(os.environ.get("PORT", "8080"))
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASS = os.environ.get("ADMIN_PASS", "")  # required for /admin to work
+
+# SMTP for the waitlist confirmation email. If SMTP_HOST/USER/PASS are unset the
+# feature is silently disabled (e.g. local dev) and signups still work normally.
+SMTP_HOST = os.environ.get("SMTP_HOST", "")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "465"))
+SMTP_USER = os.environ.get("SMTP_USER", "")
+SMTP_PASS = os.environ.get("SMTP_PASS", "")
+SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USER)
+SMTP_FROM_NAME = os.environ.get("SMTP_FROM_NAME", "Fieldstatic")
+SITE_URL = os.environ.get("SITE_URL", "https://fieldstatic.shop").rstrip("/")
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 MAX_EMAIL_LEN = 254
@@ -73,6 +87,212 @@ def get_db():
 
 def now_iso():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# ---------------------------------------------------------------------------
+# Waitlist confirmation email (stdlib smtplib + email).
+#
+# Two variants: a warm welcome on the first signup, and a lighter "you're
+# already on the list, sit tight" note when the same address signs up again.
+# Markup is table-based with inline styles so it survives Gmail / Outlook /
+# Apple Mail, and mirrors the site design tokens (see site/sold-out.html).
+# ---------------------------------------------------------------------------
+
+# brand palette — mirrors the :root tokens in site/sold-out.html
+_PAPER = "#F3EFE5"
+_INK = "#16150F"
+_INK_SOFT = "#4a473c"
+_COBALT = "#1E22C4"
+_LIME = "#C9F03B"
+
+
+def _first_name(name):
+    n = (name or "").strip()
+    return n.split()[0] if n else ""
+
+
+def _email_shell(preheader, body_html):
+    """Wrap a card body in the shared frame (wordmark header + dark footer)."""
+    return f"""\
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<title>Fieldstatic</title>
+</head>
+<body style="margin:0;padding:0;background:{_PAPER};-webkit-text-size-adjust:100%;">
+<span style="display:none;max-height:0;overflow:hidden;opacity:0;color:{_PAPER};">{preheader}</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{_PAPER};">
+  <tr><td align="center" style="padding:30px 16px 44px;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+      <tr><td style="padding:4px 6px 20px;">
+        <span style="font-family:Archivo,'Helvetica Neue',Arial,sans-serif;font-weight:800;font-size:20px;letter-spacing:.16em;color:{_INK};">FIELDST<span style="color:{_COBALT};">A</span>TIC<sup style="font-size:9px;letter-spacing:0;">&#8482;</sup></span>
+      </td></tr>
+      <tr><td style="background:{_PAPER};border:1.5px solid {_INK};">{body_html}</td></tr>
+      <tr><td style="background:{_INK};padding:22px 26px;">
+        <div style="font-family:'Space Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.06em;color:rgba(243,239,229,.6);line-height:1.7;">&#169; 2026 Fieldstatic &#8212; 6 fl oz of confidence.<br>Not DEET &#183; Not a repellent &#183; A different layer</div>
+        <div style="margin-top:10px;"><a href="{SITE_URL}/privacy" style="font-family:'Space Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.06em;color:{_LIME};text-decoration:none;">Privacy Policy</a></div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>"""
+
+
+def _welcome_html(name, code):
+    fn = _first_name(name)
+    hi = ("Hi %s," % html.escape(fn)) if fn else "Hi there,"
+    code_h = html.escape(code or "")
+    body = f"""
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td style="padding:34px 30px 0;">
+    <span style="display:inline-block;font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{_INK};background:{_LIME};border:1.5px solid {_INK};border-radius:999px;padding:7px 14px;">You're on the list</span>
+  </td></tr>
+  <tr><td style="padding:18px 30px 0;">
+    <h1 style="margin:0;font-family:'Archivo Expanded',Archivo,'Helvetica Neue',Arial,sans-serif;font-weight:800;font-size:33px;line-height:1.05;letter-spacing:-.02em;color:{_INK};">Thanks for joining the <span style="background:{_LIME};padding:0 .08em;">waitlist.</span></h1>
+  </td></tr>
+  <tr><td style="padding:18px 30px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:{_INK_SOFT};">
+    {hi}<br><br>
+    We're sorry we couldn't get a bottle to you this time &#8212; Batch&nbsp;No.&nbsp;001 sold out faster than we expected, and the next batch isn't ready quite yet. We know that's a letdown, and we're grateful you're willing to wait.<br><br>
+    Here's where things stand &#8212; there's nothing else you need to do:
+  </td></tr>
+  <tr><td style="padding:22px 30px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1.5px solid {_INK};">
+      <tr>
+        <td width="52" valign="top" style="padding:18px 0 16px 18px;"><div style="width:32px;height:32px;line-height:30px;text-align:center;border:1.5px solid {_INK};border-radius:50%;background:{_LIME};font-size:15px;color:{_INK};">&#10003;</div></td>
+        <td valign="top" style="padding:18px 20px 16px 12px;font-family:'Helvetica Neue',Arial,sans-serif;">
+          <div style="font-weight:700;font-size:15px;color:{_INK};margin-bottom:3px;">You're locked into the waitlist</div>
+          <div style="font-size:14px;line-height:1.55;color:{_INK_SOFT};">Your details are saved &#8212; no second sign-up, no re-typing your email.</div>
+        </td>
+      </tr>
+      <tr><td colspan="2" style="padding:0 18px;"><div style="border-top:1.5px dashed rgba(22,21,15,.22);font-size:0;line-height:0;">&nbsp;</div></td></tr>
+      <tr>
+        <td width="52" valign="top" style="padding:16px 0 18px 18px;"><div style="width:32px;height:32px;line-height:30px;text-align:center;border:1.5px solid {_INK};border-radius:50%;background:{_LIME};font-size:15px;color:{_INK};">&#9993;</div></td>
+        <td valign="top" style="padding:16px 20px 18px 12px;font-family:'Helvetica Neue',Arial,sans-serif;">
+          <div style="font-weight:700;font-size:15px;color:{_INK};margin-bottom:3px;">We'll reach out the moment Batch&nbsp;No.&nbsp;002 is ready</div>
+          <div style="font-size:14px;line-height:1.55;color:{_INK_SOFT};">You'll be among the first to hear &#8212; one email, the day it ships. No spam in between.</div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+  <tr><td style="padding:20px 30px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{_INK};">
+      <tr><td style="padding:20px 22px;">
+        <div style="font-family:'Space Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:{_LIME};margin-bottom:7px;">A thank-you for waiting</div>
+        <div style="font-family:'Archivo Expanded',Archivo,Arial,sans-serif;font-weight:800;font-size:22px;color:{_PAPER};line-height:1.1;">10% off your first order</div>
+        <div style="font-family:'Space Mono',ui-monospace,monospace;font-size:13px;color:rgba(243,239,229,.72);margin-top:10px;line-height:1.5;">Code <span style="color:{_LIME};font-weight:700;">{code_h}</span> &#8212; tied to your email and applied automatically when we reopen.</div>
+      </td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="padding:26px 30px 34px;">
+    <a href="{SITE_URL}" style="display:inline-block;background:{_INK};color:{_PAPER};font-family:Archivo,'Helvetica Neue',Arial,sans-serif;font-weight:800;font-size:15px;text-decoration:none;border-radius:999px;padding:14px 28px;">Back to fieldstatic.shop &#8594;</a>
+  </td></tr>
+</table>"""
+    pre = "Batch 001 sold out — but you're locked in, with 10% off when we reopen."
+    return _email_shell(pre, body)
+
+
+def _repeat_html(name, code):
+    fn = _first_name(name)
+    hi = ("Hi %s," % html.escape(fn)) if fn else "Hi there,"
+    code_h = html.escape(code or "")
+    body = f"""
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td style="padding:34px 30px 0;">
+    <span style="display:inline-block;font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{_INK};background:{_LIME};border:1.5px solid {_INK};border-radius:999px;padding:7px 14px;">Already on the list</span>
+  </td></tr>
+  <tr><td style="padding:18px 30px 0;">
+    <h1 style="margin:0;font-family:'Archivo Expanded',Archivo,'Helvetica Neue',Arial,sans-serif;font-weight:800;font-size:33px;line-height:1.05;letter-spacing:-.02em;color:{_INK};">We love the <span style="background:{_LIME};padding:0 .08em;">enthusiasm</span> ;)</h1>
+  </td></tr>
+  <tr><td style="padding:18px 30px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:{_INK_SOFT};">
+    {hi}<br><br>
+    We appreciate the interest &#8212; really. But you're <b style="color:{_INK};">already on the Fieldstatic waitlist</b>, so there's no need to sign up again. Please be a little patient ;)<br><br>
+    We'll email you the moment Batch&nbsp;No.&nbsp;002 is ready &#8212; you won't miss it.
+  </td></tr>
+  <tr><td style="padding:22px 30px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{_INK};">
+      <tr><td style="padding:20px 22px;">
+        <div style="font-family:'Space Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:{_LIME};margin-bottom:7px;">Still locked in</div>
+        <div style="font-family:'Archivo Expanded',Archivo,Arial,sans-serif;font-weight:800;font-size:20px;color:{_PAPER};line-height:1.15;">Your spot &amp; your 10% welcome discount</div>
+        <div style="font-family:'Space Mono',ui-monospace,monospace;font-size:13px;color:rgba(243,239,229,.72);margin-top:10px;line-height:1.5;">Code <span style="color:{_LIME};font-weight:700;">{code_h}</span> &#8212; applied automatically when we reopen. Nothing to do but wait.</div>
+      </td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="padding:26px 30px 34px;">
+    <a href="{SITE_URL}" style="display:inline-block;background:{_INK};color:{_PAPER};font-family:Archivo,'Helvetica Neue',Arial,sans-serif;font-weight:800;font-size:15px;text-decoration:none;border-radius:999px;padding:14px 28px;">Back to fieldstatic.shop &#8594;</a>
+  </td></tr>
+</table>"""
+    pre = "You're already on the waitlist — no need to sign up again. Sit tight!"
+    return _email_shell(pre, body)
+
+
+def build_waitlist_email(name, code, is_repeat):
+    """Return (subject, text_body, html_body) for one confirmation email."""
+    fn = _first_name(name)
+    hi = ("Hi %s," % fn) if fn else "Hi there,"
+    if is_repeat:
+        subject = "You're already on the list — hang tight ;)"
+        text = (
+            f"{hi}\n\n"
+            "We appreciate the interest -- really. But you're already on the "
+            "Fieldstatic waitlist, so there's no need to sign up again. Please be "
+            "a little patient ;)\n\n"
+            "We'll email you the moment Batch No. 002 is ready -- you won't miss it.\n\n"
+            f"Your spot and your 10% welcome discount are still locked in (code "
+            f"{code}), applied automatically when we reopen.\n\n"
+            f"{SITE_URL}\n\n-- Fieldstatic\n"
+        )
+        html_body = _repeat_html(name, code)
+    else:
+        subject = "You're on the Fieldstatic waitlist — and 10% is yours"
+        text = (
+            f"{hi}\n\n"
+            "We're sorry we couldn't get a bottle to you this time -- Batch No. 001 "
+            "sold out faster than we expected, and the next batch isn't ready quite "
+            "yet. We're grateful you're willing to wait.\n\n"
+            "Here's where things stand -- there's nothing else you need to do:\n\n"
+            "  * You're locked into the waitlist. Your details are saved.\n"
+            "  * We'll reach out the moment Batch No. 002 is ready -- one email, the "
+            "day it ships. No spam in between.\n\n"
+            f"A thank-you for waiting: 10% off your first order. Code {code}, tied to "
+            "your email and applied automatically when we reopen.\n\n"
+            f"{SITE_URL}\n\n-- Fieldstatic\n"
+        )
+        html_body = _welcome_html(name, code)
+    return subject, text, html_body
+
+
+def send_waitlist_email(to_email, name, code, is_repeat):
+    """Build and send one confirmation email. Safe to call from a worker thread."""
+    if not (SMTP_HOST and SMTP_USER and SMTP_PASS):
+        return
+    try:
+        subject, text_body, html_body = build_waitlist_email(name, code, is_repeat)
+        msg = EmailMessage()
+        msg["Subject"] = subject
+        msg["From"] = formataddr((SMTP_FROM_NAME, SMTP_FROM))
+        msg["To"] = to_email
+        msg.set_content(text_body)
+        msg.add_alternative(html_body, subtype="html")
+        ctx = ssl.create_default_context()
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=20) as s:
+            s.login(SMTP_USER, SMTP_PASS)
+            s.send_message(msg)
+        print("email sent to %s (repeat=%s)" % (to_email, is_repeat), flush=True)
+    except Exception as e:
+        print("EMAIL ERROR for %s: %r" % (to_email, e), flush=True)
+
+
+def dispatch_waitlist_email(to_email, name, code, is_repeat):
+    """Fire-and-forget the confirmation email so the API response isn't blocked."""
+    if not (SMTP_HOST and SMTP_USER and SMTP_PASS):
+        return
+    threading.Thread(
+        target=send_waitlist_email,
+        args=(to_email, name, code, is_repeat),
+        daemon=True,
+    ).start()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -172,6 +392,14 @@ class Handler(BaseHTTPRequestHandler):
         try:
             with _db_lock:
                 db = get_db()
+                # a prior row with this address means they're already on the list;
+                # reuse their original perk code so the email cites a stable one
+                prior = db.execute(
+                    "SELECT discount_code FROM subscribers WHERE email=? ORDER BY id ASC LIMIT 1",
+                    (email,),
+                ).fetchone()
+                is_repeat = prior is not None
+                email_code = prior[0] if (is_repeat and prior[0]) else code
                 db.execute(
                     "INSERT INTO subscribers (email, created_at, ip, user_agent, name, quantity, discount_code, price_variant)"
                     " VALUES (?,?,?,?,?,?,?,?)",
@@ -180,7 +408,12 @@ class Handler(BaseHTTPRequestHandler):
                 db.commit()
         except Exception:
             return self._json(500, {"ok": False, "error": "Could not save right now. Please try again."})
-        return self._json(200, {"ok": True, "code": code})
+
+        # confirmation email — warm welcome on first signup, a lighter "sit tight"
+        # note on repeats. Dispatched in the background so slow/failing SMTP never
+        # blocks (or fails) the signup itself.
+        dispatch_waitlist_email(email, name, email_code, is_repeat)
+        return self._json(200, {"ok": True, "code": email_code})
 
     # ---- admin auth ----------------------------------------------------
     def _auth_ok(self):
@@ -343,8 +576,33 @@ ADMIN_HTML = """<!DOCTYPE html>
 
 
 def main():
+    import sys
+    argv = sys.argv[1:]
+    # --preview [outdir]      write both email variants to HTML files to eyeball
+    # --send-test TO [repeat] send a live test email through the configured SMTP
+    if argv and argv[0] == "--preview":
+        outdir = argv[1] if len(argv) > 1 else "."
+        for tag, repeat in (("welcome", False), ("repeat", True)):
+            _, _, h = build_waitlist_email("Alex Rivera", "FS-AB12CD", repeat)
+            path = os.path.join(outdir, "email-preview-%s.html" % tag)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(h)
+            print("wrote", path)
+        return
+    if argv and argv[0] == "--send-test":
+        if len(argv) < 2:
+            print("usage: app.py --send-test you@example.com [repeat]")
+            return
+        repeat = len(argv) > 2 and argv[2] == "repeat"
+        send_waitlist_email(argv[1], "Alex Rivera", "FS-AB12CD", repeat)
+        return
+
     if not ADMIN_PASS:
         print("WARNING: ADMIN_PASS not set — /admin is disabled.", flush=True)
+    if SMTP_HOST and SMTP_USER and SMTP_PASS:
+        print("email: enabled (%s:%d as %s)" % (SMTP_HOST, SMTP_PORT, SMTP_USER), flush=True)
+    else:
+        print("email: disabled (set SMTP_HOST/SMTP_USER/SMTP_PASS to enable)", flush=True)
     get_db()
     httpd = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print("fieldstatic listening on :%d  static=%s  db=%s" % (PORT, STATIC_DIR, DB_PATH), flush=True)

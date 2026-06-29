@@ -15,6 +15,15 @@ services:
     environment:
       ADMIN_USER: fieldstatic
       ADMIN_PASS: ${ADMIN_PASS:?set ADMIN_PASS in .env}
+      # Waitlist confirmation email (Timeweb SMTP, implicit TLS on 465).
+      # Leave SMTP_USER/SMTP_PASS unset to disable email; the site still serves.
+      SMTP_HOST: ${SMTP_HOST:-smtp.timeweb.ru}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@fieldstatic.shop}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Fieldstatic}
+      SITE_URL: ${SITE_URL:-https://fieldstatic.shop}
     volumes:
       - ./data:/data           # isolated SQLite waitlist DB, persists across rebuilds
     expose:
