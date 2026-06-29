@@ -99,7 +99,6 @@ def now_iso():
 
 # brand palette — mirrors the :root tokens in site/sold-out.html
 _PAPER = "#F3EFE5"
-_WHITE = "#FFFFFF"
 _INK = "#16150F"
 _COBALT = "#1E22C4"
 _LIME = "#C9F03B"
@@ -118,17 +117,20 @@ def _email_shell(preheader, body_html):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
 <title>Fieldstatic</title>
+<style>:root{{color-scheme:light;supported-color-schemes:light;}}</style>
 </head>
-<body style="margin:0;padding:0;background:{_WHITE};-webkit-text-size-adjust:100%;">
-<span style="display:none;max-height:0;overflow:hidden;opacity:0;color:{_WHITE};">{preheader}</span>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{_WHITE};">
+<body style="margin:0;padding:0;background:{_PAPER};color-scheme:light;-webkit-text-size-adjust:100%;">
+<span style="display:none;max-height:0;overflow:hidden;opacity:0;color:{_PAPER};">{preheader}</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{_PAPER};">
   <tr><td align="center" style="padding:30px 16px 44px;">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
       <tr><td style="padding:4px 6px 20px;">
         <span style="font-family:Archivo,'Helvetica Neue',Arial,sans-serif;font-weight:800;font-size:20px;letter-spacing:.16em;color:{_INK};">FIELDST<span style="color:{_COBALT};">A</span>TIC<sup style="font-size:9px;letter-spacing:0;">&#8482;</sup></span>
       </td></tr>
-      <tr><td style="background:{_WHITE};border:1.5px solid {_INK};">{body_html}</td></tr>
+      <tr><td style="background:{_PAPER};border:1.5px solid {_INK};">{body_html}</td></tr>
       <tr><td style="background:{_INK};padding:22px 26px;">
         <div style="font-family:'Space Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.06em;color:rgba(243,239,229,.6);line-height:1.7;">&#169; 2026 Fieldstatic &#8212; 6 fl oz of confidence.<br>Not DEET &#183; Not a repellent &#183; A different layer</div>
         <div style="margin-top:10px;"><a href="{SITE_URL}/privacy" style="font-family:'Space Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.06em;color:{_LIME};text-decoration:none;">Privacy Policy</a></div>
