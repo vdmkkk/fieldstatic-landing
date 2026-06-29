@@ -105,6 +105,29 @@
     fsPrice._resolve(v);
   }
 
+  // Acquisition source. PostHog already puts utm_* on the first pageview, but
+  // with anonymous tracking those don't ride on later conversion events. We
+  // register them as super properties so EVERY event this session (incl.
+  // order_clicked / subscribe_submitted) carries the source — making
+  // "break funnel down by utm_source" work. first_* = sticky first touch.
+  function captureCampaign() {
+    try {
+      var q = new URLSearchParams(location.search);
+      var keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+                  'gclid', 'fbclid', 'ttclid', 'msclkid'];
+      var props = {};
+      for (var i = 0; i < keys.length; i++) {
+        var val = q.get(keys[i]);
+        if (val) props[keys[i]] = String(val).slice(0, 200);
+      }
+      if (!Object.keys(props).length) return;
+      var firstTouch = {};
+      for (var k in props) firstTouch['first_' + k] = props[k];
+      posthog.register_once(firstTouch);  // first touch — set once, never overwritten
+      posthog.register(props);            // latest touch — on every event this session
+    } catch (e) {}
+  }
+
   /* ---- PostHog boot (consent-gated) ----------------------------------- */
   var booted = false;
   function bootPostHog() {
@@ -121,7 +144,7 @@
       capture_pageleave: true,
       autocapture: true,                   // clickmaps + heatmaps, zero instrumentation
       session_recording: { maskAllInputs: true }, // never record typed name/email
-      loaded: function () { resolvePriceFromFlags(); }
+      loaded: function () { captureCampaign(); resolvePriceFromFlags(); }
     });
     posthog.onFeatureFlags(function () { resolvePriceFromFlags(); });
   }
