@@ -445,7 +445,7 @@
 <!-- ============ COOKIE NOTICE ============ -->
 <div class="cookie" id="cookieBar" role="dialog" aria-label="Cookie notice" aria-live="polite">
   <div class="cookie-inner">
-    <p class="cookie-txt">We use first-party, self-hosted analytics — including aggregate heatmaps and session insights — to understand how the site is used and make Fieldstatic better. Nothing loads until you accept. Read our <a href="/privacy.html">Privacy Policy</a>.</p>
+    <p class="cookie-txt">We use cookies to understand how the site is used and improve it. Read our <a href="/privacy.html">Privacy Policy</a>.</p>
     <div class="cookie-acts">
       <button class="btn-cookie ghost" id="cookieDecline" type="button">Decline</button>
       <button class="btn-cookie accept" id="cookieAccept" type="button">Accept</button>
@@ -607,17 +607,19 @@
   })();
 
 
-  /* ---- cookie consent ----------------------------------------------------
-     Stores the visitor's choice and exposes a hook for observability tools
-     added later. To gate an analytics snippet on consent, either check
-     window.fsConsent.analytics, or listen once for the event:
-         document.addEventListener('fs-consent-granted', initAnalytics);
-     The event also fires on load if consent was granted on a prior visit. */
+  /* ---- cookie consent (geo-split) ----------------------------------------
+     EU/EEA/UK visitors get an opt-in gate (Accept / Decline) and nothing
+     tracks until they accept. Everyone else is tracked by default (analytics.js
+     boots on load) and this banner is just a notice with an opt-out. Region
+     comes from analytics.js (window.fsRegion.isEU, best-effort via timezone). */
   (function(){
     var KEY='fs_consent';                 // 'granted' | 'denied'
     var bar=document.getElementById('cookieBar');
     if(!bar) return;
     window.fsConsent={analytics:false};
+    var isEU = !(window.fsRegion && window.fsRegion.isEU === false); // default EU if unknown
+    var acceptBtn=document.getElementById('cookieAccept');
+    var declineBtn=document.getElementById('cookieDecline');
 
     function grant(){
       window.fsConsent.analytics=true;
@@ -627,19 +629,31 @@
     function write(v){ try{ localStorage.setItem(KEY,v); }catch(e){} }
 
     var saved=read();
-    if(saved==='granted'){ grant(); }
-    else if(saved!=='denied'){
-      // first visit (or no stored choice) — show the banner
-      setTimeout(function(){ bar.classList.add('show'); }, 700);
-    }
+    if(saved==='granted'){ grant(); return; }   // already in — no banner
+    if(saved==='denied'){ return; }              // opted out — no banner
 
-    function choose(v){
-      write(v);
-      if(v==='granted') grant();
-      bar.classList.remove('show');
+    // No stored choice yet.
+    if(isEU){
+      acceptBtn.textContent='Accept';
+      declineBtn.textContent='Decline';
+    } else {
+      // tracking is already running (default-on); banner just notifies + opt-out
+      window.fsConsent.analytics=true;
+      acceptBtn.textContent='Got it';
+      declineBtn.textContent='Opt out';
     }
-    document.getElementById('cookieAccept').addEventListener('click', function(){ choose('granted'); });
-    document.getElementById('cookieDecline').addEventListener('click', function(){ choose('denied'); });
+    setTimeout(function(){ bar.classList.add('show'); }, 700);
+
+    acceptBtn.addEventListener('click', function(){
+      write('granted');
+      if(isEU) grant();                          // non-EU already tracking
+      bar.classList.remove('show');
+    });
+    declineBtn.addEventListener('click', function(){
+      write('denied');
+      if(!isEU && window.fsOptOut) window.fsOptOut();  // stop the session we started
+      bar.classList.remove('show');
+    });
   })();
 })();
 </script>

@@ -36,9 +36,36 @@
 
   var HAS_KEY = !!POSTHOG_KEY;
 
-  function consentGranted() {
-    try { return localStorage.getItem('fs_consent') === 'granted'; } catch (e) { return false; }
+  // --- region + consent (geo-split) ------------------------------------
+  // EU/EEA/UK visitors require explicit opt-in; everyone else is tracked by
+  // default (notify-only) and can opt out. Region is best-effort via timezone.
+  function isEURegion() {
+    try {
+      var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || '');
+      return /^Europe\//.test(tz) ||
+             /^Atlantic\/(Canary|Madeira|Azores|Reykjavik|Faroe)/.test(tz);
+    } catch (e) { return true; }  // unknown -> treat as EU (stricter, safer)
   }
+  window.fsRegion = { isEU: isEURegion() };
+
+  // 'granted' | 'denied' | 'pending'
+  function consentState() {
+    var v = null;
+    try { v = localStorage.getItem('fs_consent'); } catch (e) {}
+    if (v === 'granted' || v === 'denied') return v;
+    return window.fsRegion.isEU ? 'pending' : 'granted';  // non-EU defaults on
+  }
+
+  // Let the banner stop tracking if a visitor opts out after we've started.
+  window.fsOptOut = function () {
+    try { localStorage.setItem('fs_consent', 'denied'); } catch (e) {}
+    try {
+      if (window.posthog && booted) {
+        posthog.opt_out_capturing();
+        if (posthog.stopSessionRecording) posthog.stopSessionRecording();
+      }
+    } catch (e) {}
+  };
 
   /* ---- safe event helper (no-op until PostHog has booted) -------------- */
   window.fsTrack = function (event, props) {
@@ -100,7 +127,7 @@
   }
 
   /* ---- decide what to do on this page load ---------------------------- */
-  if (consentGranted() && HAS_KEY) {
+  if (consentState() === 'granted' && HAS_KEY) {
     bootPostHog();
     // safety net: if flags never arrive, fall back to control pricing
     setTimeout(function () { fsPrice._resolve('control'); }, 1500);
